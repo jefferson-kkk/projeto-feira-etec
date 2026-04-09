@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MultiGas Control System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Segoe UI", Arial, sans-serif;
+            background-color: #f5f7fa;
+            color: #1e293b;
+            line-height: 1.6;
+        }
+
+        /* =========================================
+           NOVA SEÇÃO HERO E CABEÇALHO INTEGRADO
+           ========================================= */
+
+        .hero-wrapper {
+            /* Fundo escuro com efeitos de glow (gradientes radiais azul/roxo) */
+            background: radial-gradient(circle at 70% 50%, rgba(59, 130, 246, 0.15), transparent 40%),
+                radial-gradient(circle at 30% 20%, rgba(139, 92, 246, 0.15), transparent 40%),
+                #0f172a;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            color: #ffffff;
+            overflow: hidden;
+        }
+
+        /* CABEÇALHO TRANSPARENTE */
+        .cabecalho-transparente {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 30px 8%;
+        }
+
+        .cabecalho-transparente .logo {
+            font-size: 26px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            color: #ffffff;
+        }
+
+        .menu-hero {
+            display: flex;
+            align-items: center;
+            gap: 30px;
+        }
+
+        .menu-hero a {
+            color: #cbd5e1;
+            text-decoration: none;
+            font-size: 15px;
+            font-weight: 500;
+            transition: 0.3s color;
+        }
+
+        .menu-hero a:hover {
+            color: #ffffff;
+        }
+
+        /* CONTEÚDO HERO (ESQUERDA E DIREITA) */
+        .hero-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 8%;
+            flex: 1;
+            /* Faz o conteúdo ocupar o restante da tela abaixo do header */
+            gap: 50px;
+        }
+
+        /* TEXTOS DA ESQUERDA */
+        .hero-text-block {
+            max-width: 600px;
+            /* Efeito de fade-in no carregamento */
+            animation: fadeInUp 1s ease forwards;
+
+            /* REMOVEMOS A IMAGEM DAQUI */
+
+            /* Deixei um padding leve para o texto respirar, mas sem fundo */
+            padding: 20px;
+        }
+
+        .hero-wrapper {
+            /* A IMAGEM VEM PARA CÁ! 👇 */
+            background-image: url('Gemini_Generated_Image_bemjv3bemjv3bemj.png');
+            /* Coloquei um gradiente escuro por cima para o texto continuar legível */
+            background: linear-gradient(to right, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.3)), url('Gemini_Generated_Image_bemjv3bemjv3bemj.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            color: #ffffff;
+            overflow: hidden;
+        }
+
+        
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .hero-text-block h1 {
+            font-size: 54px;
+            line-height: 1.15;
+            margin-bottom: 25px;
+            font-weight: 800;
+            /* Gradiente harmonizando com os tons de azul e roxo da imagem */
+            background: linear-gradient(to right, #93c5fd, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero-text-block p {
+            font-size: 20px;
+            color: #cbd5e1;
+            margin-bottom: 40px;
+            line-height: 1.6;
+        }
+
+        /* IMAGEM DA DIREITA (EFEITO VIDRO FLUTUANTE) */
+        .hero-visual-block {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+        }
+
+        .fundo-vidro-flutuante {
+            background: rgba(255, 255, 255, 0.05);
+            /* Fundo translúcido */
+            backdrop-filter: blur(20px);
+            /* Efeito Glassmorphism */
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            /* Animação suave de flutuação */
+            animation: flutuar 6s ease-in-out infinite;
+        }
+
+        .fundo-vidro-flutuante img {
+            width: 500px;
+            max-width: 100%;
+            border-radius: 12px;
+            display: block;
+            /* Sombra projetada na imagem com tom azul/roxo */
+            filter: drop-shadow(0 20px 40px rgba(139, 92, 246, 0.4));
+        }
+
+        @keyframes flutuar {
+            0% {
+                transform: translateY(0px);
+            }
+
+            50% {
+                transform: translateY(-15px);
+            }
+
+            100% {
+                transform: translateY(0px);
+            }
+        }
+
+        /* BOTÕES HERO */
+        .btn-primario,
+        .btn-outline {
+            padding: 14px 32px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.3s all;
+            font-size: 16px;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primario {
+            background-color: #3b82f6;
+            color: #ffffff;
+            border: none;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+        }
+
+        .btn-primario:hover {
+            background-color: #2563eb;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.6);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+        }
+
+        .btn-outline:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: #ffffff;
+        }
+
+        /* =========================================
+           RESPONSIVIDADE (MOBILE)
+           ========================================= */
+        @media (max-width: 900px) {
+            .hero-content {
+                flex-direction: column;
+                text-align: center;
+                gap: 40px;
+                padding-top: 40px;
+            }
+
+            .hero-text-block h1 {
+                font-size: 38px;
+            }
+
+            .fundo-vidro-flutuante img {
+                width: 320px;
+            }
+
+            .menu-hero {
+                display: none;
+                /* Oculta menu no mobile para simplificar (requer menu hamburguer depois) */
+            }
+        }
+
+        /* =========================================
+           RESTANTE DO SEU SITE (MANTIDO INTACTO)
+           ========================================= */
+
+        section {
+            padding: 80px 10%;
+        }
+
+        .ler-mais {
+            text-align: center;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
+            margin: 40px 10%;
+        }
+
+        .ler-mais img {
+            width: 120px;
+            margin-bottom: 20px;
+        }
+
+        .ler-mais button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background: #2563eb;
+            border: none;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        /* CARDS */
+        .utilizacao {
+            display: flex;
+            gap: 40px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .card {
+            background: white;
+            width: 300px;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            text-align: center;
+        }
+
+        .card img {
+            width: 100%;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        /* RISCOS */
+        .riscos {
+            text-align: center;
+        }
+
+        /* ARQUITETURA */
+        .arquitetura {
+            background: #f1f5f9;
+            text-align: center;
+        }
+
+        .fluxo {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 40px;
+            flex-wrap: wrap;
+        }
+
+        .fluxo div {
+            background: white;
+            padding: 20px 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            font-weight: 500;
+        }
+
+        /* FOOTER */
+        .rodape {
+            background: #0f172a;
+            color: white;
+            text-align: center;
+            padding: 40px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="hero-wrapper">
+        <header class="cabecalho-transparente">
+            <div class="logo">MultiGas Control System</div>
+            <nav class="menu-hero">
+                <a href="#">Início</a>
+                <a href="#">Funcionamento</a>
+                <a href="#">Recursos</a>
+                <a href="#">Suporte</a>
+                <a href="#" class="btn-outline">Contato</a>
+            </nav>
+        </header>
+
+        <main class="hero-content">
+            <div class="hero-text-block">
+                <img src="" alt="">
+                <h1>Monitoramento<br>Inteligente de Gases</h1>
+                <p>Identificação automática e controle remoto em tempo real para a sua segurança.</p>
+                <button class="btn-primario">Ver Painel</button>
+            </div>
+
+            <div class="hero-visual-block">
+                <div class="fundo-vidro-flutuante">
+                    <img src="Gemini_Generated_Image_bemjv3bemjv3bemj.png" alt="Sensor Multi Gás flutuante com dados">
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <section class="ler-mais">
+        <img src="imagens/manual.jpg" alt="Manual Técnico">
+        <h2>Manual Técnico</h2>
+        <p>Conheça todos os detalhes do funcionamento do sistema.</p>
+        <button>Ler Mais</button>
+    </section>
+
+    <section class="introducao">
+        <h1>MultiGas Control System</h1>
+        <p>Sistema inteligente para monitoramento de gases industriais e residenciais.</p>
+    </section>
+
+    <section class="utilizacao">
+        <div class="card">
+            <img src="imagens/industria.jpg" alt="Aplicação Industrial">
+            <h3>Aplicação Industrial</h3>
+            <p>Monitoramento em galpões, indústrias químicas e ambientes fechados.</p>
+        </div>
+
+        <div class="card">
+            <img src="imagens/dashboard.jpg" alt="Plataforma Web">
+            <h3>Plataforma Web</h3>
+            <p>Visualização de dados e controle remoto via sistema online.</p>
+        </div>
+    </section>
+
+    <section class="riscos">
+        <h1>Riscos Reduzidos</h1>
+        <p>Prevenção de vazamentos, intoxicações e explosões por gases inflamáveis.</p>
+    </section>
+
+    <section class="arquitetura">
+        <h1>Arquitetura do Sistema</h1>
+        <p>Integração entre sensores, microcontrolador, servidor e plataforma web.</p>
+
+        <div class="fluxo">
+            <div>Sensor</div>
+            <div>Microcontrolador</div>
+            <div>Servidor</div>
+            <div>Usuário</div>
+        </div>
+    </section>
+
+    <footer class="rodape">
+        <p>© 2026 MultiGas Control System</p>
+        <p>Desenvolvido por Jefferson Bruno</p>
+        <p>Curso Técnico em Desenvolvimento de Sistemas</p>
+    </footer>
+
+</body>
+
+</html>
