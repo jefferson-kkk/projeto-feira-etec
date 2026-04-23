@@ -1,41 +1,43 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MultiGas Control System</title>
+    <title>MultiGas | Inteligência em Monitoramento</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+    
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        :root {
+            --primary: #3b82f6;
+            --accent: #a855f7;
+            --dark-bg: #0f172a;
+            --card-bg: rgba(255, 255, 255, 0.03);
+            --text-light: #f1f5f9;
+            --text-dim: #94a3b8;
+            --gradient: linear-gradient(135deg, #3b82f6 0%, #a855f7 100%);
         }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            font-family: "Segoe UI", Arial, sans-serif;
-            background-color: #f5f7fa;
-            color: #1e293b;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--dark-bg);
+            color: var(--text-light);
             line-height: 1.6;
+            overflow-x: hidden;
         }
 
-        /* =========================================
-           NOVA SEÇÃO HERO E CABEÇALHO INTEGRADO
-           ========================================= */
-
+        /* --- MANTENDO SEU HERO ORIGINAL COM AJUSTES DE LUXO --- */
         .hero-wrapper {
-            /* Fundo escuro com efeitos de glow (gradientes radiais azul/roxo) */
-            background: radial-gradient(circle at 70% 50%, rgba(59, 130, 246, 0.15), transparent 40%),
-                radial-gradient(circle at 30% 20%, rgba(139, 92, 246, 0.15), transparent 40%),
-                #0f172a;
+            background: linear-gradient(to bottom, rgba(19, 30, 54, 0.8), var(--dark-bg)), 
+                        url('Gemini_Generated_Image_bemjv3bemjv3bemj.png');
+            background-size: cover;
+            background-position: center;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
-            color: #ffffff;
-            overflow: hidden;
         }
 
-        /* CABEÇALHO TRANSPARENTE */
         .cabecalho-transparente {
             display: flex;
             justify-content: space-between;
@@ -43,379 +45,234 @@
             padding: 30px 8%;
         }
 
-        .cabecalho-transparente .logo {
-            font-size: 26px;
-            font-weight: 800;
-            letter-spacing: 1px;
-            color: #ffffff;
-        }
+        .logo { font-size: 22px; font-weight: 800; letter-spacing: -1px; background: var(--gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 
-        .menu-hero {
-            display: flex;
-            align-items: center;
-            gap: 30px;
-        }
+        .menu-hero { display: flex; gap: 30px; align-items: center; }
+        .menu-hero a { color: var(--text-dim); text-decoration: none; font-size: 14px; transition: 0.3s; }
+        .menu-hero a:hover { color: white; }
 
-        .menu-hero a {
-            color: #cbd5e1;
-            text-decoration: none;
-            font-size: 15px;
-            font-weight: 500;
-            transition: 0.3s color;
-        }
-
-        .menu-hero a:hover {
-            color: #ffffff;
-        }
-
-        /* CONTEÚDO HERO (ESQUERDA E DIREITA) */
         .hero-content {
-            display: flex;
-            justify-content: space-between;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
             align-items: center;
             padding: 0 8%;
             flex: 1;
-            /* Faz o conteúdo ocupar o restante da tela abaixo do header */
             gap: 50px;
         }
 
-        /* TEXTOS DA ESQUERDA */
-        .hero-text-block {
-            max-width: 600px;
-            /* Efeito de fade-in no carregamento */
-            animation: fadeInUp 1s ease forwards;
+        .hero-text-block h1 { font-size: clamp(2.5rem, 5vw, 4rem); line-height: 1.1; margin-bottom: 20px; }
+        .hero-text-block p { font-size: 1.1rem; color: var(--text-dim); margin-bottom: 35px; max-width: 500px; }
 
-            /* REMOVEMOS A IMAGEM DAQUI */
+        .btn { padding: 16px 35px; border-radius: 12px; font-weight: 700; text-decoration: none; display: inline-block; transition: 0.3s; cursor: pointer; }
+        .btn-filled { background: var(--gradient); color: white; border: none; box-shadow: 0 10px 20px rgba(59, 130, 246, 0.3); }
+        .btn-filled:hover { transform: translateY(-3px); box-shadow: 0 15px 30px rgba(59, 130, 246, 0.4); }
 
-            /* Deixei um padding leve para o texto respirar, mas sem fundo */
-            padding: 20px;
-        }
-
-        .hero-wrapper {
-            /* A IMAGEM VEM PARA CÁ! 👇 */
-            background-image: url('Gemini_Generated_Image_bemjv3bemjv3bemj.png');
-            /* Coloquei um gradiente escuro por cima para o texto continuar legível */
-            background: linear-gradient(to right, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.3)), url('Gemini_Generated_Image_bemjv3bemjv3bemj.png');
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            color: #ffffff;
-            overflow: hidden;
-        }
-
+        /* --- MOCKUP ESTILO AS REFERÊNCIAS ENVIADAS --- */
+        .mockup-container { position: relative; width: 100%; display: flex; justify-content: center; align-items: center; }
         
-
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .hero-text-block h1 {
-            font-size: 54px;
-            line-height: 1.15;
-            margin-bottom: 25px;
-            font-weight: 800;
-            /* Gradiente harmonizando com os tons de azul e roxo da imagem */
-            background: linear-gradient(to right, #93c5fd, #c084fc);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .hero-text-block p {
-            font-size: 20px;
-            color: #cbd5e1;
-            margin-bottom: 40px;
-            line-height: 1.6;
-        }
-
-        /* IMAGEM DA DIREITA (EFEITO VIDRO FLUTUANTE) */
-        .hero-visual-block {
-            flex: 1;
-            display: flex;
-            justify-content: center;
-        }
-
         .fundo-vidro-flutuante {
             background: rgba(255, 255, 255, 0.05);
-            /* Fundo translúcido */
             backdrop-filter: blur(20px);
-            /* Efeito Glassmorphism */
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 20px;
-            padding: 30px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            /* Animação suave de flutuação */
-            animation: flutuar 6s ease-in-out infinite;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 15px;
+            box-shadow: 0 50px 100px -20px rgba(0,0,0,0.5);
+            animation: float 6s ease-in-out infinite;
         }
 
-        .fundo-vidro-flutuante img {
-            width: 500px;
-            max-width: 100%;
-            border-radius: 12px;
-            display: block;
-            /* Sombra projetada na imagem com tom azul/roxo */
-            filter: drop-shadow(0 20px 40px rgba(139, 92, 246, 0.4));
+        .fundo-vidro-flutuante img { width: 100%; border-radius: 15px; display: block; }
+
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
+
+        /* --- SEÇÕES BASEADAS NO MODELO DE SUCESSO --- */
+        section { padding: 120px 8%; }
+
+        .section-tag { color: var(--primary); font-weight: 700; text-transform: uppercase; letter-spacing: 2px; font-size: 12px; margin-bottom: 15px; display: block; }
+        .section-title { font-size: 2.5rem; margin-bottom: 50px; font-weight: 800; }
+
+        /* Grid de Cards Estilo Vidro */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
         }
 
-        @keyframes flutuar {
-            0% {
-                transform: translateY(0px);
-            }
-
-            50% {
-                transform: translateY(-15px);
-            }
-
-            100% {
-                transform: translateY(0px);
-            }
-        }
-
-        /* BOTÕES HERO */
-        .btn-primario,
-        .btn-outline {
-            padding: 14px 32px;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: 0.3s all;
-            font-size: 16px;
-            text-decoration: none;
-            display: inline-block;
-        }
-
-        .btn-primario {
-            background-color: #3b82f6;
-            color: #ffffff;
-            border: none;
-            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
-        }
-
-        .btn-primario:hover {
-            background-color: #2563eb;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.6);
-        }
-
-        .btn-outline {
-            background: transparent;
-            color: #ffffff;
-            border: 1px solid rgba(255, 255, 255, 0.4);
-        }
-
-        .btn-outline:hover {
-            background: rgba(255, 255, 255, 0.1);
-            border-color: #ffffff;
-        }
-
-        /* =========================================
-           RESPONSIVIDADE (MOBILE)
-           ========================================= */
-        @media (max-width: 900px) {
-            .hero-content {
-                flex-direction: column;
-                text-align: center;
-                gap: 40px;
-                padding-top: 40px;
-            }
-
-            .hero-text-block h1 {
-                font-size: 38px;
-            }
-
-            .fundo-vidro-flutuante img {
-                width: 320px;
-            }
-
-            .menu-hero {
-                display: none;
-                /* Oculta menu no mobile para simplificar (requer menu hamburguer depois) */
-            }
-        }
-
-        /* =========================================
-           RESTANTE DO SEU SITE (MANTIDO INTACTO)
-           ========================================= */
-
-        section {
-            padding: 80px 10%;
-        }
-
-        .ler-mais {
-            text-align: center;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
-            margin: 40px 10%;
-        }
-
-        .ler-mais img {
-            width: 120px;
-            margin-bottom: 20px;
-        }
-
-        .ler-mais button {
-            margin-top: 20px;
-            padding: 10px 20px;
-            background: #2563eb;
-            border: none;
-            color: white;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-
-        /* CARDS */
-        .utilizacao {
-            display: flex;
-            gap: 40px;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-        .card {
-            background: white;
-            width: 300px;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-            text-align: center;
-        }
-
-        .card img {
-            width: 100%;
-            border-radius: 8px;
-            margin-bottom: 15px;
-        }
-
-        /* RISCOS */
-        .riscos {
-            text-align: center;
-        }
-
-        /* ARQUITETURA */
-        .arquitetura {
-            background: #f1f5f9;
-            text-align: center;
-        }
-
-        .fluxo {
-            display: flex;
-            justify-content: center;
-            gap: 30px;
-            margin-top: 40px;
-            flex-wrap: wrap;
-        }
-
-        .fluxo div {
-            background: white;
-            padding: 20px 30px;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-            font-weight: 500;
-        }
-
-        /* FOOTER */
-        .rodape {
-            background: #0f172a;
-            color: white;
-            text-align: center;
+        .feature-card {
+            background: var(--card-bg);
+            border: 1px solid rgba(255,255,255,0.05);
             padding: 40px;
-            font-size: 14px;
+            border-radius: 24px;
+            transition: 0.4s;
         }
+
+        .feature-card:hover {
+            background: rgba(255,255,255,0.08);
+            border-color: var(--primary);
+            transform: translateY(-10px);
+        }
+
+        .icon-circle {
+            width: 50px; height: 50px; background: var(--gradient); border-radius: 12px;
+            display: flex; align-items: center; justify-content: center; margin-bottom: 25px;
+        }
+
+        /* Seção "Showcase" (Texto + Imagem) */
+        .showcase { display: flex; align-items: center; gap: 80px; }
+        .showcase.reverse { flex-direction: row-reverse; }
+        .showcase-content { flex: 1; }
+        .showcase-visual { flex: 1.2; background: var(--card-bg); border-radius: 30px; padding: 20px; border: 1px solid rgba(255,255,255,0.1); }
+        .showcase-visual img { width: 100%; border-radius: 20px; opacity: 0.8; }
+
+        /* Footer Moderno */
+        footer {
+            background: #070b14;
+            padding: 80px 8% 40px;
+            border-top: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .footer-content {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr;
+            gap: 50px;
+            margin-bottom: 60px;
+        }
+
+        .copyright { color: var(--text-dim); font-size: 14px; text-align: center; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 30px; }
+
+        /* RESPONSIVIDADE EXTREMA */
+        @media (max-width: 1024px) {
+            .hero-content, .showcase { grid-template-columns: 1fr; flex-direction: column; text-align: center; }
+            .hero-text-block { order: 2; }
+            .mockup-container { order: 1; }
+            .showcase.reverse { flex-direction: column; }
+            .hero-text-block p { margin: 0 auto 30px; }
+        }
+
+        .tema{
+    
+            background-color: rgba(19, 30, 54, 0.8), var(--dark-bg);
+            border: none;
+        }
+                .tema { display: flex; gap: 30px; align-items: center; }
+        .tema { color: var(--text-dim); text-decoration: none; font-size: 14px; transition: 0.3s; }
+    
     </style>
 </head>
-
 <body>
 
     <div class="hero-wrapper">
         <header class="cabecalho-transparente">
-            <div class="logo">MultiGas Control System</div>
+            <div class="logo">MULTIGAS_IO</div>
             <nav class="menu-hero">
-                <a href="#">Início</a>
-                <a href="#">Funcionamento</a>
-                <a href="#">Recursos</a>
-                <a href="#">Suporte</a>
-                <a href="#" class="btn-outline">Contato</a>
+                <a href="#features">Recursos</a>
+                <a href="#tecnologia">Tecnologia</a>
+                <a href="#contato" class="btn-filled" style="padding: 10px 20px;">Teste Grátis</a>
+                <button onclick="planofundo()" class="tema">mudar tema</button>
             </nav>
         </header>
 
         <main class="hero-content">
             <div class="hero-text-block">
-                <img src="" alt="">
-                <h1>Monitoramento<br>Inteligente de Gases</h1>
-                <p>Identificação automática e controle remoto em tempo real para a sua segurança.</p>
-                <button class="btn-primario">Ver Painel</button>
+                <h1>Segurança Industrial Redefinida.</h1>
+                <p>Monitore gases críticos com precisão absoluta. Uma plataforma completa de IoT para proteger sua equipe e seu patrimônio.</p>
+                <div style="display: flex; gap: 15px; justify-content: inherit;">
+                    <a href="#features" class="btn btn-filled">Ver Funcionalidades</a>
+                    <a href="#" class="btn" style="color: white; border: 1px solid rgba(255,255,255,0.2);">Agendar Demo</a>
+                </div>
             </div>
 
-            <div class="hero-visual-block">
+            <div class="mockup-container">
                 <div class="fundo-vidro-flutuante">
-                    <img src="Gemini_Generated_Image_bemjv3bemjv3bemj.png" alt="Sensor Multi Gás flutuante com dados">
+                    <img src="Gemini_Generated_Image_bemjv3bemjv3bemj.png" alt="MultiGas App Preview">
                 </div>
             </div>
         </main>
     </div>
 
-    <section class="ler-mais">
-        <img src="imagens/manual.jpg" alt="Manual Técnico">
-        <h2>Manual Técnico</h2>
-        <p>Conheça todos os detalhes do funcionamento do sistema.</p>
-        <button>Ler Mais</button>
-    </section>
-
-    <section class="introducao">
-        <h1>MultiGas Control System</h1>
-        <p>Sistema inteligente para monitoramento de gases industriais e residenciais.</p>
-    </section>
-
-    <section class="utilizacao">
-        <div class="card">
-            <img src="imagens/industria.jpg" alt="Aplicação Industrial">
-            <h3>Aplicação Industrial</h3>
-            <p>Monitoramento em galpões, indústrias químicas e ambientes fechados.</p>
-        </div>
-
-        <div class="card">
-            <img src="imagens/dashboard.jpg" alt="Plataforma Web">
-            <h3>Plataforma Web</h3>
-            <p>Visualização de dados e controle remoto via sistema online.</p>
+    <section id="features">
+        <span class="section-tag">Tecnologia MQ Sensor</span>
+        <h2 class="section-title">Proteção Completa em <br>Múltiplas Camadas</h2>
+        
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="icon-circle">🔥</div>
+                <h3>Detecção de Inflamáveis</h3>
+                <p>Identificação instantânea de GLP, Metano e Propano com calibração automática de sensibilidade.</p>
+            </div>
+            <div class="feature-card">
+                <div class="icon-circle">📱</div>
+                <h3>Controle via Mobile</h3>
+                <p>Acompanhe os níveis de partes por milhão (PPM) diretamente no seu smartphone em qualquer lugar.</p>
+            </div>
+            <div class="feature-card">
+                <div class="icon-circle">🛡️</div>
+                <h3>Protocolo de Emergência</h3>
+                <p>Acionamento automático de exaustores e fechamento de válvulas de gás ao detectar perigo.</p>
+            </div>
         </div>
     </section>
 
-    <section class="riscos">
-        <h1>Riscos Reduzidos</h1>
-        <p>Prevenção de vazamentos, intoxicações e explosões por gases inflamáveis.</p>
-    </section>
-
-    <section class="arquitetura">
-        <h1>Arquitetura do Sistema</h1>
-        <p>Integração entre sensores, microcontrolador, servidor e plataforma web.</p>
-
-        <div class="fluxo">
-            <div>Sensor</div>
-            <div>Microcontrolador</div>
-            <div>Servidor</div>
-            <div>Usuário</div>
+    <section id="tecnologia" style="background: #0c1220;">
+        <div class="showcase">
+            <div class="showcase-content">
+                <span class="section-tag">Infraestrutura</span>
+                <h2 class="section-title">Arquitetura Cloud de Baixa Latência</h2>
+                <p style="color: var(--text-dim); margin-bottom: 30px;">
+                    Nossa rede utiliza protocolos MQTT para garantir que um alerta de vazamento chegue ao seu dispositivo em menos de 200ms. Segurança não pode esperar.
+                </p>
+                <ul style="list-style: none; color: var(--text-dim);">
+                    <li style="margin-bottom: 15px;">✅ Criptografia de ponta a ponta</li>
+                    <li style="margin-bottom: 15px;">✅ Armazenamento em bancos de dados NoSQL</li>
+                    <li>✅ Backup de energia para o hardware local</li>
+                </ul>
+            </div>
+            <div class="showcase-visual">
+                <div style="height: 400px; display: flex; align-items: center; justify-content: center; background: #070b14; border-radius: 20px; border: 1px dashed #1e293b;">
+                    <p style="color: #475569;">[ INSIRA AQUI O PRINT DO SEU DASHBOARD ]</p>
+                </div>
+            </div>
         </div>
     </section>
 
-    <footer class="rodape">
-        <p>© 2026 MultiGas Control System</p>
-        <p>Desenvolvido por Jefferson Bruno</p>
-        <p>Curso Técnico em Desenvolvimento de Sistemas</p>
+    <footer>
+        <div class="footer-content">
+            <div>
+                <div class="logo" style="margin-bottom: 20px;">MULTIGAS_IO</div>
+                <p style="color: var(--text-dim); max-width: 300px;">Líderes em tecnologia IoT para segurança química e monitoramento ambiental.</p>
+            </div>
+            <div>
+                <h4 style="margin-bottom: 20px;">Soluções</h4>
+                <ul style="list-style: none; color: var(--text-dim);">
+                    <li style="margin-bottom: 10px;">Indústria 4.0</li>
+                    <li style="margin-bottom: 10px;">Residencial</li>
+                    <li>Sistemas de Alerta</li>
+                </ul>
+            </div>
+            <div>
+                <h4 style="margin-bottom: 20px;">Contato</h4>
+                <p style="color: var(--text-dim);">contato@multigas.io</p>
+                <p style="color: var(--text-dim);">Suporte 24/7</p>
+            </div>
+        </div>
+        <div class="copyright">
+            <p>© 2026 MultiGas Control System. Desenvolvido com foco em excelência por Jefferson Bruno.</p>
+        </div>
+        <script>
+        function planofundo() {
+        const cor = document.getElementById("tema").value.trim();
+
+        // Cria um elemento temporário para validar a cor
+        const teste = document.createElement("div");
+        teste.style.backgroundColor = cor;
+
+        if (teste.style.backgroundColor) {
+            document.body.style.backgroundColor = cor;
+        } else {
+            alert("Cor inválida! Use um nome válido, hexadecimal ou RGB.");
+        }
+    }
+        </script>
     </footer>
 
 </body>
-
-</html>
+</html> 
