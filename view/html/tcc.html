@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="tcc.css">
+    <title>tcc-Etec Trajano Camargo</title>
+</head>
+<body>
+    <header class="cabecalho">
+        <div class="header-inner">
+            <a class="logo" href="#home">TCC Projeto</a>
+            <nav class="navegacao">
+                <a href="#home">Home</a>
+                <a href="#fluxo">Recursos</a>
+                <a href="#tecnologia">Tecnologia</a>
+                <a href="#login">Login</a>
+                <a href="#carrinho">Carrinho</a>
+            </nav>
+        </div>
+    </header>
+    <div id="home" class="fundo-efeito-hero">
+        <div class="hero-content">
+            <span class="hero-label">Projeto de Curso</span>
+            <h1>Dispositivo de detecção de gás</h1>
+            <p>Lorem ipsum, dolor sit amet consectetur adipisicing elit. Et at blanditiis ratione fugiat? At eos, alias quibusdam vel voluptatum ipsum tempore quos eveniet voluptates, impedit quae exercitationem neque, accusantium et.</p>
+            <div class="hero-actions">
+                <a class="hero-cta" href="#carrinho">Adquirir</a>
+                <a class="hero-link" href="#fluxo">Ver arquitetura</a>
+            </div>
+        </div>
+        <a class="scroll-hint" href="#fluxo">Descer</a>
+    </div>
+    <section class="main-page container">
+        <div class="introducao section-card" data-anim="left">
+            <h1>Introdução</h1>
+            <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Possimus sequi, tempora repellat quas laborum deleniti minima nemo doloribus maxime aliquam, omnis expedita dolor minus explicabo nihil aperiam blanditiis. Pariatur, ipsam.</p>
+            <a class="secondary-cta" href="#fluxo">Descubra mais</a>
+        </div>
+        <section id="fluxo" class="fluxo section-card" data-anim="right">
+            <div class="fluxo-text">
+                <h1>Arquitetura do sistema</h1>
+                <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Corporis officia tempora deserunt et laboriosam quibusdam dignissimos aperiam omnis nisi, eveniet ab dolorum porro labore quam necessitatibus dicta voluptas aspernatur culpa!</p>
+            </div>
+            <div class="fluxo-chart">
+                <div class="arquitetura">
+                    <div class="arch-card">
+                        <span>Entrada (sensores)</span>
+                        <div class="arch-item">MH-Z19</div>
+                        <div class="arch-item">MIPEX-04</div>
+                        <div class="arch-item">BME680</div>
+                    </div>
+                    <div class="arrow">→</div>
+                    <div class="arch-card">
+                        <span>Microcontrolador</span>
+                        <div class="arch-item">ESP32</div>
+                    </div>
+                    <div class="arrow">→</div>
+                    <div class="arch-card">
+                        <span>Saídas</span>
+                        <div class="arch-item">BUZZER</div>
+                        <div class="arch-item">LEDS</div>
+                        <div class="arch-item">VENTOINHAS</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <section id="tecnologia" class="card-area section-card" data-anim="fade">
+            <h1>Tecnologia</h1>
+            <p>O sistema é baseado em ESP32, sensores de gás e um fluxo de alertas em tempo real para ambientes mais seguros.</p>
+        </section>
+        <section id="login" class="card-area section-card" data-anim="left">
+            <h1>Login</h1>
+            <p>Acesso rápido e seguro para controlar notificações, histórico de alertas e gerenciamento do dispositivo.</p>
+        </section>
+        <section id="carrinho" class="card-area section-card" data-anim="right">
+            <h1>Carrinho</h1>
+            <p>Finalize a compra com um fluxo transparente, mantendo o usuário informado a cada etapa.</p>
+        </section>
+    </section>
+</body>
+</html>
