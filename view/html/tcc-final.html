@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AQM-32 • Sistema Inteligente de Detecção de Gases</title>
+<link rel="stylesheet" href="/view/css/tcc.css">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300;0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;0,14..32,800;0,14..32,900;1,14..32,300&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+</head>
+<body>
+
+<!-- PARTICLES -->
+<canvas id="particles"></canvas>
+
+<!-- ====================================================== -->
+<!-- LOADER                                                  -->
+<!-- ====================================================== -->
+<div class="loader" id="loader">
+  <div class="loader-inner">
+    <div class="loader-logo">ETEC Trajano Camargo</div>
+    <div class="loader-title">AQM-32</div>
+    <div class="loader-bar"><div class="loader-progress"></div></div>
+    <div class="loader-status">INITIALIZING SYSTEM...</div>
+  </div>
+</div>
+
+<!-- ====================================================== -->
+<!-- HEADER                                                  -->
+<!-- ====================================================== -->
+<header id="header">
+  <div class="container navbar">
+
+    <a href="#" class="logo">
+      <div class="logo-icon">⚡</div>
+      <div class="logo-text">
+        <span class="logo-name">GasDetector AI</span>
+        <span class="logo-sub">AQM-32 · TCC 2026</span>
+      </div>
+    </a>
+
+    <nav>
+      <a href="#inicio">Início</a>
+      <a href="#arquitetura">Arquitetura</a>
+      <a href="#hardware">Hardware</a>
+      <a href="#firmware">Firmware</a>
+      <a href="#dashboard">Dashboard</a>
+      <a href="#equipe">Equipe</a>
+    </nav>
+
+    <div class="nav-status">
+      <div class="status-dot"></div>
+      SISTEMA OPERACIONAL
+    </div>
+
+  </div>
+</header>
+
+<!-- ====================================================== -->
+<!-- HERO                                                    -->
+<!-- ====================================================== -->
+<section class="hero" id="inicio">
+
+  <div class="orb orb1"></div>
+  <div class="orb orb2"></div>
+
+  <div class="container hero-grid">
+
+    <!-- LEFT -->
+    <div>
+      <div class="hero-badges">
+        <div class="badge">ETEC Trajano Camargo</div>
+        <div class="badge badge-accent">TCC 2026</div>
+        <div class="badge">Sistemas Embarcados</div>
+      </div>
+
+      <h1>
+        <span class="model">AQM-32</span>
+        <span class="gradient-text">Sistema de<br>Detecção</span><br>
+        de Gases
+      </h1>
+
+      <p class="hero-desc">
+        Dispositivo embarcado de alto desempenho para monitoramento
+        ambiental em tempo real — desenvolvido com ESP32, sensor MQ-135
+        e interface de dados inteligente.
+      </p>
+
+      <div class="spec-sheet">
+        <div class="spec-item">
+          <span class="spec-label">Microcontrolador</span>
+          <span class="spec-value">ESP32-WROOM-32</span>
+        </div>
+        <div class="spec-item">
+          <span class="spec-label">Sensor Primário</span>
+          <span class="spec-value">MQ-135</span>
+        </div>
+        <div class="spec-item">
+          <span class="spec-label">Clock Máximo</span>
+          <span class="spec-value">240 MHz Dual-Core</span>
+        </div>
+        <div class="spec-item">
+          <span class="spec-label">Linguagem</span>
+          <span class="spec-value">C++ · Arduino</span>
+        </div>
+      </div>
+
+      <div class="hero-buttons">
+        <a href="#dashboard" class="btn btn-primary">▶ Ver Dashboard</a>
+        <a href="#arquitetura" class="btn btn-secondary">↓ Documentação</a>
+      </div>
+    </div>
+
+    <!-- RIGHT: device -->
+    <div class="device-wrap">
+      <div class="device" id="device">
+        <div class="device-glow"></div>
+        <div class="device-screen">
+
+          <div class="topbar">
+            <span></span><span></span><span></span>
+          </div>
+
+          <div class="live-indicator">
+            <div class="live-dot"></div>
+            MONITORAMENTO AO VIVO
+          </div>
+
+          <div class="device-sensor-label">Concentração de Gás</div>
+          <div class="device-value">247</div>
+          <div class="device-unit">PPM · MQ-135</div>
+
+          <div class="device-mini-chart">
+            <svg viewBox="0 0 280 80" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="lineGrad" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%" stop-color="#00d4ff"/>
+                  <stop offset="100%" stop-color="#7c3aed"/>
+                </linearGradient>
+                <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#00d4ff" stop-opacity="0.2"/>
+                  <stop offset="100%" stop-color="#00d4ff" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <path d="M0,60 C20,55 30,45 50,48 C70,51 80,35 100,30 C120,25 130,40 150,38 C170,36 180,20 200,22 C220,24 240,35 260,28 L280,25" fill="none" stroke="url(#lineGrad)" stroke-width="2"/>
+              <path d="M0,60 C20,55 30,45 50,48 C70,51 80,35 100,30 C120,25 130,40 150,38 C170,36 180,20 200,22 C220,24 240,35 260,28 L280,25 L280,80 L0,80 Z" fill="url(#areaGrad)"/>
+            </svg>
+          </div>
+
+          <div class="device-stats">
+            <div class="device-stat">
+              <div class="label">TEMP</div>
+              <div class="val">23°C</div>
+            </div>
+            <div class="device-stat">
+              <div class="label">UMID</div>
+              <div class="val">52%</div>
+            </div>
+          </div>
+
+          <div class="device-status-badge">
+            🔒 Ambiente Seguro
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ====================================================== -->
+<!-- ARQUITETURA                                             -->
+<!-- ====================================================== -->
+<section id="arquitetura">
+  <div class="container">
+
+    <div class="section-eyebrow reveal">
+      <div class="section-num">01</div>
+      <div class="section-label">Arquitetura</div>
+    </div>
+    <div class="section-head reveal">
+      <h2>Arquitetura <em>do Sistema</em></h2>
+    </div>
+    <p class="section-intro reveal">
+      O AQM-32 opera em um fluxo linear e determinístico.
+      Os sensores capturam dados do ambiente, o ESP32 processa e
+      classifica os valores, e os atuadores fornecem feedback
+      imediato ao usuário — tudo em ciclos de baixíssima latência.
+    </p>
+
+    <div class="arch-diagram reveal">
+
+      <!-- INPUT -->
+      <div class="arch-block">
+        <div class="arch-block-label">Entrada · Input</div>
+        <div class="arch-chip">
+          <div class="arch-chip-icon">📡</div>
+          <div class="arch-chip-name">MQ-135</div>
+          <div class="arch-chip-detail">Sensor de Gases</div>
+        </div>
+      </div>
+
+      <!-- ARROW 1 -->
+      <div class="arch-arrow">
+        <div class="arch-arrow-line"></div>
+        <div class="arch-arrow-label">ADC 12-bit</div>
+      </div>
+
+      <!-- PROCESSING -->
+      <div class="arch-block">
+        <div class="arch-block-label">Processamento · MCU</div>
+        <div class="arch-chip">
+          <div class="arch-chip-icon">⚙️</div>
+          <div class="arch-chip-name">ESP32</div>
+          <div class="arch-chip-detail">Dual-Core 240MHz</div>
+        </div>
+      </div>
+
+      <!-- ARROW 2 -->
+      <div class="arch-arrow">
+        <div class="arch-arrow-line"></div>
+        <div class="arch-arrow-label">I2C / GPIO</div>
+      </div>
+
+      <!-- OUTPUT -->
+      <div class="arch-block">
+        <div class="arch-block-label">Saída · Output</div>
+        <div class="arch-chip-group">
+          <div class="arch-chip">
+            <div class="arch-chip-icon">🖥️</div>
+            <div class="arch-chip-name">Display OLED</div>
+            <div class="arch-chip-detail">SSD1306 128×64</div>
+          </div>
+          <div class="arch-chip">
+            <div class="arch-chip-icon">💡</div>
+            <div class="arch-chip-name">LEDs RGB</div>
+            <div class="arch-chip-detail">Status Visual</div>
+          </div>
+          <div class="arch-chip">
+            <div class="arch-chip-icon">🔔</div>
+            <div class="arch-chip-name">Buzzer</div>
+            <div class="arch-chip-detail">Alerta Sonoro</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</section>
+
+<!-- ====================================================== -->
+<!-- HARDWARE                                                -->
+<!-- ====================================================== -->
+<section id="hardware">
+  <div class="container">
+
+    <div class="section-eyebrow reveal">
+      <div class="section-num">02</div>
+      <div class="section-label">Hardware</div>
+    </div>
+    <div class="section-head reveal">
+      <h2>Análise de <em>Hardware</em></h2>
+    </div>
+    <p class="section-intro reveal">
+      Cada componente foi selecionado para maximizar a relação entre
+      custo, eficiência e precisão. Abaixo, uma análise técnica
+      detalhada de cada peça do hardware embarcado.
+    </p>
+
+    <div class="hw-grid">
+
+      <!-- ESP32 -->
+      <div class="hw-card reveal reveal-delay-1">
+        <div class="hw-card-header">
+          <div class="hw-card-header-left">
+            <div class="hw-card-icon">🧠</div>
+            <div class="hw-card-title">ESP32-WROOM-32</div>
+            <div class="hw-card-role">Unidade Microcontroladora</div>
+          </div>
+          <div class="hw-card-tag">MCU Principal</div>
+        </div>
+        <div class="hw-card-body">
+          <p>Núcleo do AQM-32. SoC que integra processador dual-core, Wi-Fi e Bluetooth em um único chip — oferecendo capacidade de processamento robusta para leitura de sensores, controle de atuadores e comunicação sem fio simultaneamente.</p>
+          <div class="hw-specs">
+            <div class="hw-specs-title">Especificações</div>
+            <div class="hw-spec-list">
+              <div class="hw-spec-item">
+                <span class="hw-spec-key">CPU</span>
+                <span class="hw-spec-val">Dual-Core Xtensa LX6 @ 240MHz</span>
+              </div>
+              <div class="hw-spec-item">
+                <span class="hw-spec-key">Conectividade</span>
+                <span class="hw-spec-val">Wi-Fi 802.11 b/g/n · BT 4.2</span>
+              </div>
+              <div class="hw-spec-item">
+                <span class="hw-spec-key">ADC</span>
+                <span class="hw-spec-val">12-bit · 18 canais</span>
+              </div>
+              <div class="hw-spec-item">
+                <span class="hw-spec-key">Tensão</span>
+                <span class="hw-spec-val">3.3V operação</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MQ-135 -->
+      <div class="hw-card reveal reveal-delay-2">
+        <div class="hw-card-header">
+          <div class="hw-card-header-left">
+            <div class="hw-card-icon">📡</div>
+            <div class="hw-card-title">Sensor de Gás MQ-135</div>
+            <div class="hw-card-role">Unidade de Sensoriamento</div>
+          </div>
+          <div class="hw-card-tag">Sensor Primário</div>
+        </div>
+        <div class="hw-card-body">
+          <p>Sensor semicondutor de óxido de metal (MOS) projetado para detectar NH₃, NOx, álcool, benzeno, fumaça e CO₂. A resistência interna varia com a concentração de gás, gerando um sinal analógico proporcional à poluição.</p>
+          <div class="hw-specs">
+            <div class="hw-specs-title">Especificações</div>
+            <div class="hw-spec-list">
+              <div class="hw-spec-item">
+                <span class="hw-spec-key">Tipo</span>
+                <span class="hw-spec-val">Quimiorresistivo (MOS)</span>
+              </div>
+              <div class="hw-spec-item">
+                <span class="hw-spec-key">Gases</span>
+                <span class="hw-spec-val">NH₃, NOx, Álcool, CO₂</span>
+              </div>
+              <div class="hw-spec-item">
+                <span class="hw-spec-key">Tensão</span>
+                <span class="hw-spec-val">5V operação</span>
+              </div>
+              <div class="hw-spec-item">
+                <span class="hw-spec-key">Saída</span>
+                <span class="hw-spec-val">Analógica (divisor de tensão)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- OLED -->
+      <div class="hw-card reveal reveal-delay-3">
+        <div class="hw-card-header">
+          <div class="hw-card-header-left">
+            <div class="hw-card-icon">🖥️</div>
+            <div class="hw-card-title">Display OLED 0.96"</div>
+            <div class="hw-card-role">Interface Homem-Máquina</div>
+          </div>
+          <div class="hw-card-tag">IHM Principal</div>
+        </div>
+        <div class="hw-card-body">
+          <p>Display OLED monocromático de alta eficiência baseado no controlador SSD1306. Pixels pretos são desligados, reduzindo consumo. Controlado via I2C, exibe PPM, status e informações do sistema em tempo real.</p>
+          <div class="hw-specs">
+            <div class="hw-specs-title">Especificações</div>
+            <div class="hw-spec-list">
+              <div class="hw-spec-item">
+                <span class="hw-spec-key">Tecnologia</span>
+                <span class="hw-spec-val">OLED Monocromático</span>
+              </div>
+              <div class="hw-spec-item">
+                <span class="hw-spec-key">Resolução</span>
+                <span class="hw-spec-val">128 × 64 pixels</span>
+              </div>
+              <div class="hw-spec-item">
+                <span class="hw-spec-key">Controlador</span>
+                <span class="hw-spec-val">SSD1306</span>
+              </div>
+              <div class="hw-spec-item">
+                <span class="hw-spec-key">Interface</span>
+                <span class="hw-spec-val">I²C (SDA + SCL)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- LEDs + Buzzer -->
+      <div class="hw-card reveal reveal-delay-4">
+        <div class="hw-card-header">
+          <div class="hw-card-header-left">
+            <div class="hw-card-icon">🚨</div>
+            <div class="hw-card-title">LEDs + Buzzer Ativo</div>
+            <div class="hw-card-role">Atuadores de Alerta</div>
+          </div>
+          <div class="hw-card-tag">Output / Alerta</div>
+        </div>
+        <div class="hw-card-body">
+          <p>LEDs difusos (verde/amarelo/vermelho) + buzzer ativo 5V como sistema de alerta redundante. Resistores de 220Ω protegem os GPIOs. O buzzer possui oscilador interno — basta aplicar nível lógico alto para acionar.</p>
+          <div class="hw-specs">
+            <div class="hw-specs-title">Especificações</div>
+            <div class="hw-spec-list">
+              <div class="hw-spec-item">
+                <span class="hw-spec-key">LEDs</span>
+                <span class="hw-spec-val">Verde · Amarelo · Vermelho (5mm)</span>
+              </div>
+              <div class="hw-spec-item">
+                <span class="hw-spec-key">Resistores</span>
+                <span class="hw-spec-val">220Ω limitadores de corrente</span>
+              </div>
+              <div class="hw-spec-item">
+                <span class="hw-spec-key">Buzzer</span>
+                <span class="hw-spec-val">Ativo · ~2.5 kHz · 3.3–5V</span>
+              </div>
+              <div class="hw-spec-item">
+                <span class="hw-spec-key">Controle</span>
+                <span class="hw-spec-val">GPIO Digital (HIGH/LOW)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ====================================================== -->
+<!-- FIRMWARE                                                -->
+<!-- ====================================================== -->
+<section id="firmware">
+  <div class="container">
+
+    <div class="section-eyebrow reveal">
+      <div class="section-num">03</div>
+      <div class="section-label">Firmware</div>
+    </div>
+    <div class="section-head reveal">
+      <h2>Firmware <em>e Lógica de Controle</em></h2>
+    </div>
+    <p class="section-intro reveal">
+      Desenvolvido em C++ no framework Arduino. A lógica é reativa e cíclica —
+      garantindo monitoramento contínuo de baixa latência com resposta
+      imediata a variações nos níveis de gás.
+    </p>
+
+    <div class="fw-layout">
+
+      <!-- Flowchart -->
+      <div class="fw-flowchart reveal">
+
+        <div class="flow-node start">
+          <div class="flow-node-label">▶ Iniciar Ciclo</div>
+          <div class="flow-node-desc">Setup ESP32 · GPIO · I2C · Serial</div>
+        </div>
+        <div class="flow-connector"></div>
+
+        <div class="flow-node process">
+          <div class="flow-node-label">1 · Leitura do Sensor</div>
+          <div class="flow-node-desc">analogRead(PIN_MQ135) → raw ADC 12-bit</div>
+          <div class="flow-node-tag">ADC</div>
+        </div>
+        <div class="flow-connector"></div>
+
+        <div class="flow-node process">
+          <div class="flow-node-label">2 · Conversão para PPM</div>
+          <div class="flow-node-desc">Aplicar fórmula de curva de calibração do sensor</div>
+          <div class="flow-node-tag">MATH</div>
+        </div>
+        <div class="flow-connector"></div>
+
+        <div class="flow-node process">
+          <div class="flow-node-label">3 · Avaliar Status</div>
+          <div class="flow-node-desc">PPM &lt; 400 → SEGURO · &lt; 700 → ATENÇÃO · ≥ 700 → PERIGO</div>
+          <div class="flow-node-tag">LOGIC</div>
+        </div>
+        <div class="flow-connector"></div>
+
+        <div class="flow-node output">
+          <div class="flow-node-label">4 · Atualizar Saídas</div>
+          <div class="flow-node-desc">Escrever OLED · acionar LED correto · ativar buzzer se perigo</div>
+          <div class="flow-node-tag">I/O</div>
+        </div>
+        <div class="flow-connector"></div>
+
+        <div class="flow-node loop">
+          <div class="flow-node-label">↺ delay(500ms) → Repetir</div>
+          <div class="flow-node-desc">Ciclo contínuo a 2Hz de atualização</div>
+        </div>
+
+      </div>
+
+      <!-- Code snippet -->
+      <div class="fw-code-block reveal reveal-delay-2">
+        <div class="fw-code-header">
+          <div class="fw-code-dots"><span></span><span></span><span></span></div>
+          <div class="fw-code-filename">main.ino</div>
+          <div class="fw-code-lang">C++ / Arduino</div>
+        </div>
+        <div class="fw-code-body">
+<pre><span class="cm">// AQM-32 · Sistema de Detecção de Gases
+// ETEC Trajano Camargo — TCC 2026</span>
+
+<span class="kw">#define</span> <span class="tp">PIN_MQ135</span>   <span class="num">34</span>
+<span class="kw">#define</span> <span class="tp">PIN_LED_G</span>   <span class="num">25</span>
+<span class="kw">#define</span> <span class="tp">PIN_LED_Y</span>   <span class="num">26</span>
+<span class="kw">#define</span> <span class="tp">PIN_LED_R</span>   <span class="num">27</span>
+<span class="kw">#define</span> <span class="tp">PIN_BUZZER</span>  <span class="num">14</span>
+
+<span class="kw">#define</span> LIMIAR_ATENCAO  <span class="num">400</span>
+<span class="kw">#define</span> LIMIAR_PERIGO   <span class="num">700</span>
+
+<span class="tp">Adafruit_SSD1306</span> display(<span class="num">128</span>, <span class="num">64</span>);
+
+<span class="kw">void</span> <span class="fn">loop</span>() {
+  <span class="cm">// 1. Leitura e conversão para PPM</span>
+  <span class="kw">int</span> raw = <span class="fn">analogRead</span>(<span class="tp">PIN_MQ135</span>);
+  <span class="kw">float</span> ppm = <span class="fn">convertToPPM</span>(raw);
+
+  <span class="cm">// 2. Avaliação de status</span>
+  <span class="kw">String</span> status = <span class="str">"SEGURO"</span>;
+  <span class="kw">if</span> (ppm >= LIMIAR_PERIGO)
+    status = <span class="str">"PERIGO"</span>;
+  <span class="kw">else if</span> (ppm >= LIMIAR_ATENCAO)
+    status = <span class="str">"ATENCAO"</span>;
+
+  <span class="cm">// 3. Atualizar saídas</span>
+  <span class="fn">atualizarLEDs</span>(status);
+  <span class="fn">atualizarOLED</span>(ppm, status);
+  <span class="fn">atualizarBuzzer</span>(status);
+
+  <span class="fn">delay</span>(<span class="num">500</span>); <span class="cm">// ciclo 2Hz</span>
+}</pre>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ====================================================== -->
+<!-- DASHBOARD                                               -->
+<!-- ====================================================== -->
+<section id="dashboard">
+  <div class="container">
+
+    <div class="section-eyebrow reveal">
+      <div class="section-num">04</div>
+      <div class="section-label">Dashboard</div>
+    </div>
+    <div class="section-head reveal">
+      <h2>Dashboard <em>Operacional Interativo</em></h2>
+    </div>
+    <p class="section-intro reveal">
+      Simulação em tempo real do sistema AQM-32. Ajuste a concentração
+      simulada de gás e observe a resposta dos indicadores exatamente
+      como ocorre no dispositivo físico.
+    </p>
+
+    <div class="dash-layout">
+
+      <!-- Main card -->
+      <div class="dash-main-card reveal">
+        <div class="dash-live-row">
+          <div class="live-dot"></div>
+          LEITURA AO VIVO · MQ-135
+        </div>
+        <div class="dash-big-num" id="dashPpm" style="color:var(--green)">150</div>
+        <div class="dash-unit">PPM · CONCENTRAÇÃO DE GÁS</div>
+        <div class="dash-status-pill" id="dashPill" style="background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.25);color:var(--green)">
+          <span id="dashPillDot" style="width:10px;height:10px;border-radius:50%;background:var(--green)"></span>
+          <span id="dashPillText">✅ AMBIENTE SEGURO</span>
+        </div>
+      </div>
+
+      <!-- Right column -->
+      <div class="dash-right">
+
+        <!-- Slider -->
+        <div class="dash-slider-card reveal reveal-delay-1">
+          <div class="dash-slider-label">
+            <span>CONCENTRAÇÃO SIMULADA</span>
+            <span id="sliderVal">150 PPM</span>
+          </div>
+          <input type="range" id="ppmSlider" min="50" max="1000" value="150">
+          <div class="dash-thresholds">
+            <div class="dash-threshold th-safe">
+              <span class="th-label">SEGURO</span>
+              <span class="th-range">0–400 PPM</span>
+            </div>
+            <div class="dash-threshold th-warn">
+              <span class="th-label">ATENÇÃO</span>
+              <span class="th-range">400–700 PPM</span>
+            </div>
+            <div class="dash-threshold th-danger">
+              <span class="th-label">PERIGO</span>
+              <span class="th-range">700+ PPM</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mini stats -->
+        <div class="dash-mini-stats">
+          <div class="dash-mini-card reveal reveal-delay-2">
+            <div class="dash-mini-icon">🌡️</div>
+            <div class="dash-mini-label">Temperatura</div>
+            <div class="dash-mini-val">23°C</div>
+            <div class="dash-mini-sub">Ambiente estável</div>
+          </div>
+          <div class="dash-mini-card reveal reveal-delay-2">
+            <div class="dash-mini-icon">💧</div>
+            <div class="dash-mini-label">Umidade</div>
+            <div class="dash-mini-val">52%</div>
+            <div class="dash-mini-sub">Nível ideal</div>
+          </div>
+          <div class="dash-mini-card reveal reveal-delay-3">
+            <div class="dash-mini-icon">⚡</div>
+            <div class="dash-mini-label">ESP32 Uptime</div>
+            <div class="dash-mini-val" id="uptimeVal">00:00</div>
+            <div class="dash-mini-sub">Sistema ativo</div>
+          </div>
+          <div class="dash-mini-card reveal reveal-delay-3">
+            <div class="dash-mini-icon">📊</div>
+            <div class="dash-mini-label">Leituras</div>
+            <div class="dash-mini-val" id="readCount">0</div>
+            <div class="dash-mini-sub">Total de amostras</div>
+          </div>
+        </div>
+
+        <!-- History chart -->
+        <div class="dash-chart-card reveal reveal-delay-4">
+          <div class="dash-chart-title">HISTÓRICO DE LEITURAS (últimos 20 ciclos)</div>
+          <canvas id="historyCanvas" height="80"></canvas>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ====================================================== -->
+<!-- FUTURO                                                  -->
+<!-- ====================================================== -->
+<section id="futuro">
+  <div class="container">
+
+    <div class="section-eyebrow reveal">
+      <div class="section-num">05</div>
+      <div class="section-label">Expansão</div>
+    </div>
+    <div class="section-head reveal">
+      <h2>Aplicações <em>e Futuro</em></h2>
+    </div>
+
+    <div class="future-grid">
+      <div class="future-card reveal reveal-delay-1">
+        <div class="future-card-icon">🏭</div>
+        <h3>Aplicações Práticas</h3>
+        <p>
+          O AQM-32 é ideal para monitoramento de qualidade do ar em ambientes
+          fechados: residências, escritórios, laboratórios, garagens e oficinas.
+          Alerta em tempo real sobre acúmulo de gases de combustão, vapores
+          químicos e fumaça — protegendo pessoas e patrimônio.
+        </p>
+      </div>
+      <div class="future-card reveal reveal-delay-2">
+        <div class="future-card-icon">🚀</div>
+        <h3>Próximos Passos</h3>
+        <p>
+          A arquitetura modular do ESP32 permite expansões significativas:
+          integração IoT via Wi-Fi para envio de dados à nuvem, aplicativo
+          mobile com notificações push, data logging em cartão SD e adição
+          de sensores especializados como MH-Z19 para CO₂ e BME680 para VOC.
+        </p>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ====================================================== -->
+<!-- EQUIPE                                                  -->
+<!-- ====================================================== -->
+<section id="equipe">
+  <div class="container">
+
+    <div class="section-eyebrow reveal">
+      <div class="section-num">06</div>
+      <div class="section-label">Equipe</div>
+    </div>
+    <div class="section-head reveal">
+      <h2>Equipe <em>do Projeto</em></h2>
+    </div>
+    <p class="section-intro reveal">
+      Projeto concebido e desenvolvido pelos seguintes colaboradores,
+      aplicando conhecimentos de sistemas embarcados, eletrônica e
+      desenvolvimento de software.
+    </p>
+
+    <div class="team-grid">
+
+      <div class="team-card reveal reveal-delay-1">
+        <div class="team-avatar">👨‍💻</div>
+        <div class="team-name">Jefferson Bruno</div>
+        <div class="team-role">Firmware & Controle</div>
+        <div class="team-desc">Desenvolvimento do software embarcado em C++, lógica de controle dos sensores e atuadores, e integração do sistema.</div>
+      </div>
+
+      <div class="team-card reveal reveal-delay-2">
+        <div class="team-avatar">👩‍🔧</div>
+        <div class="team-name">Olivia</div>
+        <div class="team-role">Hardware & Circuitos</div>
+        <div class="team-desc">Montagem e soldagem dos circuitos, análise de componentes eletrônicos e validação do hardware embarcado.</div>
+      </div>
+
+      <div class="team-card reveal reveal-delay-3">
+        <div class="team-avatar">👨‍🎨</div>
+        <div class="team-name">João Pedro</div>
+        <div class="team-role">Interface & Testes</div>
+        <div class="team-desc">Design da interface de usuário, testes de sistema, validação de dados e documentação técnica do projeto.</div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ====================================================== -->
+<!-- FOOTER                                                  -->
+<!-- ====================================================== -->
+<footer>
+  <div class="container">
+    <div class="footer-logo">
+      <div class="footer-logo-dot"></div>
+      AQM-32 · GasDetector AI
+    </div>
+    <div class="footer-text">
+      TCC 2026 · Sistema Inteligente de Detecção de Gases<br>
+      ETEC Trajano Camargo · Limeira, SP
+    </div>
+  </div>
+  <script src="/view/js/tcc.js"></script>
+</footer>
+
+<!-- ====================================================== -->
+<!-- JAVASCRIPT                                              -->
+<!-- ====================================================== -->
+
+</body>
+</html>
