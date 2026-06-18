@@ -1,0 +1,1575 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>TCC • Sistema Inteligente de Detecção de Gases</title>
+    
+    <!-- Google Fonts: Lexend & Inter para um visual extremamente limpo e moderno -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Lexend:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Lucide Icons para suporte a ícones modernos -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        /* ========================================================= */
+        /* VARIÁVEIS DE DESIGN E CORES */
+        /* ========================================================= */
+        :root {
+            --bg-deep: #050508;
+            --bg-surface: rgba(15, 15, 25, 0.7);
+            --bg-surface-solid: #0d0d15;
+            --border-glass: rgba(255, 255, 255, 0.08);
+            
+            --primary: #00f0ff;      /* Cyan */
+            --primary-glow: rgba(0, 240, 255, 0.3);
+            --secondary: #7c3aed;    /* Purple */
+            --secondary-glow: rgba(124, 58, 237, 0.3);
+            
+            --success: #10b981;      /* Verde Esmeralda (Seguro) */
+            --warning: #f59e0b;      /* Amarelo Âmbar (Alerta) */
+            --danger: #ef4444;       /* Vermelho Vivo (Perigo) */
+            --danger-glow: rgba(239, 68, 68, 0.4);
+            
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            
+            --font-display: 'Lexend', sans-serif;
+            --font-sans: 'Inter', sans-serif;
+            --transition-smooth: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* ========================================================= */
+        /* RESET E CONFIGURAÇÕES GERAIS */
+        /* ========================================================= */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: var(--font-sans);
+            background-color: var(--bg-deep);
+            color: var(--text-main);
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        /* Canvas de Fundo (Partículas Sombrias) */
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: none;
+            opacity: 0.6;
+        }
+
+        /* Gradientes Decorativos em Background */
+        .glow-sphere {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(150px);
+            z-index: -1;
+            opacity: 0.15;
+            pointer-events: none;
+        }
+        .sphere-1 {
+            top: 10%;
+            right: 5%;
+            width: 500px;
+            height: 500px;
+            background: var(--primary);
+        }
+        .sphere-2 {
+            bottom: 20%;
+            left: 5%;
+            width: 600px;
+            height: 600px;
+            background: var(--secondary);
+        }
+
+        /* Container Principal */
+        .wrapper {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        /* ========================================================= */
+        /* HEADER / NAVBAR */
+        /* ========================================================= */
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(5, 5, 8, 0.75);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-glass);
+            transition: var(--transition-smooth);
+        }
+
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 80px;
+        }
+
+        .logo {
+            font-family: var(--font-display);
+            font-weight: 800;
+            font-size: 1.3rem;
+            letter-spacing: -1px;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #fff;
+        }
+
+        .logo span {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        nav ul {
+            display: flex;
+            list-style: none;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        nav a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: var(--transition-smooth);
+            position: relative;
+            padding: 0.5rem 0;
+        }
+
+        nav a:hover, nav a.active {
+            color: var(--primary);
+        }
+
+        nav a::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--primary);
+            transition: var(--transition-smooth);
+        }
+
+        nav a:hover::after, nav a.active::after {
+            width: 100%;
+        }
+
+        .academic-badge {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-glass);
+            padding: 0.5rem 1rem;
+            border-radius: 99px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--primary);
+        }
+
+        /* ========================================================= */
+        /* HERO SECTION */
+        /* ========================================================= */
+        .hero {
+            position: relative;
+            padding: 8rem 0 6rem 0;
+            text-align: center;
+            overflow: hidden;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(0, 240, 255, 0.1);
+            border: 1px solid rgba(0, 240, 255, 0.3);
+            color: var(--primary);
+            padding: 0.5rem 1.25rem;
+            border-radius: 99px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 2rem;
+            animation: pulse-border 3s infinite;
+        }
+
+        @keyframes pulse-border {
+            0%, 100% { border-color: rgba(0, 240, 255, 0.3); box-shadow: 0 0 0 0 rgba(0, 240, 255, 0.1); }
+            50% { border-color: rgba(0, 240, 255, 0.8); box-shadow: 0 0 15px 2px rgba(0, 240, 255, 0.2); }
+        }
+
+        .hero h1 {
+            font-family: var(--font-display);
+            font-size: 3.5rem;
+            font-weight: 800;
+            line-height: 1.15;
+            letter-spacing: -1.5px;
+            margin-bottom: 1.5rem;
+            max-width: 900px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .hero h1 span {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            font-size: 1.15rem;
+            color: var(--text-muted);
+            max-width: 650px;
+            margin: 0 auto 3rem auto;
+        }
+
+        .hero-cta {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.9rem 2rem;
+            border-radius: 12px;
+            font-family: var(--font-display);
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: #000;
+            font-weight: 700;
+            box-shadow: 0 4px 20px rgba(0, 240, 255, 0.25);
+            border: none;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 30px rgba(0, 240, 255, 0.4);
+            color: #000;
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+            border: 1px solid var(--border-glass);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        /* ========================================================= */
+        /* INTERACTIVE DASHBOARD SECTION */
+        /* ========================================================= */
+        .dashboard-section {
+            padding: 6rem 0;
+            position: relative;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+
+        .section-header h2 {
+            font-family: var(--font-display);
+            font-size: 2.25rem;
+            font-weight: 800;
+            letter-spacing: -1px;
+            margin-bottom: 1rem;
+        }
+
+        .section-header p {
+            color: var(--text-muted);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Grid do Painel de Controlo */
+        .dash-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        @media (max-width: 1024px) {
+            .dash-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Cartão Glassmorphism Genérico */
+        .glass-card {
+            background: var(--bg-surface);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border-glass);
+            border-radius: 24px;
+            padding: 2rem;
+            position: relative;
+            overflow: hidden;
+            transition: var(--transition-smooth);
+        }
+
+        .glass-card:hover {
+            border-color: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Status Geral do Painel */
+        .status-hero {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 5, 8, 0.8) 100%);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 24px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            transition: var(--transition-smooth);
+        }
+
+        .status-hero.alert-active {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(5, 5, 8, 0.8) 100%);
+            border-color: rgba(239, 68, 68, 0.4);
+            box-shadow: 0 0 30px var(--danger-glow);
+            animation: border-flash 1.5s infinite alternate;
+        }
+
+        @keyframes border-flash {
+            0% { border-color: rgba(239, 68, 68, 0.3); }
+            100% { border-color: rgba(239, 68, 68, 0.8); }
+        }
+
+        .status-info {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .status-indicator-circle {
+            position: relative;
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: rgba(16, 185, 129, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--success);
+            transition: var(--transition-smooth);
+        }
+
+        .status-hero.alert-active .status-indicator-circle {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--danger);
+            animation: pulse-ring 1.25s cubic-bezier(0.215, 0.610, 0.355, 1) infinite;
+        }
+
+        @keyframes pulse-ring {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6); }
+            70% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+
+        .status-text h3 {
+            font-family: var(--font-display);
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .status-text p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        /* Simulador de Ações */
+        .simulation-controls {
+            display: flex;
+            gap: 1rem;
+        }
+
+        /* Grid de Telemetria */
+        .telemetry-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        /* Cartão de Telemetria Individual */
+        .telemetry-card {
+            background: rgba(20, 20, 30, 0.5);
+            border: 1px solid var(--border-glass);
+            border-radius: 20px;
+            padding: 1.5rem;
+            position: relative;
+            transition: var(--transition-smooth);
+        }
+
+        .telemetry-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(255, 255, 255, 0.12);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .card-header i {
+            font-size: 1.2rem;
+        }
+
+        .telemetry-value {
+            font-family: var(--font-display);
+            font-size: 2.25rem;
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: baseline;
+            gap: 0.25rem;
+        }
+
+        .telemetry-value span.unit {
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: var(--text-muted);
+        }
+
+        .telemetry-range {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            display: flex;
+            justify-content: space-between;
+            margin-top: 0.5rem;
+            padding-top: 0.5rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        /* Barra de Progresso Interna do Cartão */
+        .progress-bar-container {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 99px;
+            overflow: hidden;
+            margin-top: 0.75rem;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            width: 45%;
+            background: var(--primary);
+            border-radius: 99px;
+            transition: var(--transition-smooth);
+        }
+
+        /* Cores Dinâmicas */
+        .color-co2 { color: #3b82f6; }
+        .color-temp { color: #f59e0b; }
+        .color-hum { color: #06b6d4; }
+        .color-meth { color: #8b5cf6; }
+
+        /* Gráfico e Atuadores */
+        .actuators-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            justify-content: space-between;
+            height: 100%;
+        }
+
+        .actuator-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 1.25rem;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-glass);
+            border-radius: 16px;
+            transition: var(--transition-smooth);
+        }
+
+        .actuator-row.active {
+            background: rgba(0, 240, 255, 0.04);
+            border-color: rgba(0, 240, 255, 0.25);
+        }
+
+        .actuator-meta {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .fan-icon {
+            transition: transform 0.5s linear;
+        }
+
+        .spinning {
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .actuator-state {
+            font-weight: 700;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 0.25rem 0.75rem;
+            border-radius: 99px;
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-muted);
+        }
+
+        .actuator-state.active-state {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success);
+        }
+
+        .actuator-state.danger-state {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--danger);
+            animation: text-pulse 1s infinite alternate;
+        }
+
+        @keyframes text-pulse {
+            0% { opacity: 0.6; }
+            100% { opacity: 1; }
+        }
+
+        /* Estilo do Canvas do Gráfico */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            height: 240px;
+            margin-top: 1.5rem;
+        }
+
+        /* ========================================================= */
+        /* COMPONENTES / ARQUITETURA DE HARDWARE */
+        /* ========================================================= */
+        .hardware-section {
+            padding: 6rem 0;
+            background: linear-gradient(180deg, var(--bg-deep) 0%, rgba(13, 13, 21, 0.8) 50%, var(--bg-deep) 100%);
+        }
+
+        .components-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+        }
+
+        .component-card {
+            background: rgba(10, 10, 15, 0.8);
+            border: 1px solid var(--border-glass);
+            border-radius: 24px;
+            padding: 2.25rem;
+            transition: var(--transition-smooth);
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .component-card:hover {
+            transform: translateY(-6px);
+            border-color: var(--primary);
+            box-shadow: 0 10px 35px rgba(0, 240, 255, 0.1);
+        }
+
+        .component-icon-box {
+            width: 56px;
+            height: 56px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, rgba(0, 240, 255, 0.1), rgba(124, 58, 237, 0.1));
+            border: 1px solid rgba(0, 240, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary);
+        }
+
+        .component-card h3 {
+            font-family: var(--font-display);
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .component-card p {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+
+        .component-specs {
+            margin-top: auto;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            padding-top: 1.25rem;
+        }
+
+        .spec-item {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .spec-label {
+            color: var(--text-muted);
+        }
+
+        .spec-value {
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        /* ========================================================= */
+        /* SISTEMA EM AÇÃO / DIAGRAMA DE FLUXO */
+        /* ========================================================= */
+        .diagram-section {
+            padding: 6rem 0;
+        }
+
+        .diagram-flow {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1.5rem;
+            margin-top: 3rem;
+        }
+
+        @media (max-width: 768px) {
+            .diagram-flow {
+                flex-direction: column;
+            }
+            .flow-arrow {
+                transform: rotate(90deg);
+                margin: 1rem 0;
+            }
+        }
+
+        .flow-step {
+            flex: 1;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-glass);
+            border-radius: 20px;
+            padding: 2rem 1.5rem;
+            text-align: center;
+            transition: var(--transition-smooth);
+        }
+
+        .flow-step:hover {
+            border-color: var(--secondary);
+            transform: scale(1.02);
+        }
+
+        .flow-step-num {
+            display: inline-flex;
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: #000;
+            font-family: var(--font-display);
+            font-weight: 800;
+            border-radius: 50%;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.25rem;
+        }
+
+        .flow-step h4 {
+            font-family: var(--font-display);
+            font-weight: 700;
+            font-size: 1.15rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .flow-step p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .flow-arrow {
+            color: var(--primary);
+            opacity: 0.6;
+        }
+
+        /* ========================================================= */
+        /* FOOTER */
+        /* ========================================================= */
+        footer {
+            border-top: 1px solid var(--border-glass);
+            padding: 4rem 0 2rem 0;
+            background: #030306;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .footer-grid {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .footer-credits p {
+            margin-bottom: 0.25rem;
+        }
+
+        /* Animações CSS Utilitárias */
+        .fade-in-up {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+        }
+
+        .fade-in-up.appeared {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- Canvas para Partículas Decorativas em Background -->
+    <canvas id="bg-canvas"></canvas>
+
+    <!-- Gradientes de Profundidade Visual -->
+    <div class="glow-sphere sphere-1"></div>
+    <div class="glow-sphere sphere-2"></div>
+
+    <!-- HEADER / NAVIGATION -->
+    <header>
+        <div class="wrapper header-container">
+            <div class="logo">
+                <i data-lucide="shield-alert" class="color-co2"></i>
+                <span>GAS SHIELD</span>
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="#inicio" class="active">Início</a></li>
+                    <li><a href="#dashboard">Dashboard</a></li>
+                    <li><a href="#hardware">Arquitetura</a></li>
+                    <li><a href="#fluxo">Operação</a></li>
+                </ul>
+            </nav>
+            <div class="academic-badge">
+                <i data-lucide="graduation-cap"></i>
+                ETEC TRAJANO CAMARGO
+            </div>
+        </div>
+    </header>
+
+    <!-- HERO SECTION -->
+    <section class="hero wrapper" id="inicio">
+        <div class="hero-badge fade-in-up">
+            <i data-lucide="cpu" style="width:16px;height:16px;"></i> Prototipagem Avançada • TCC 2026
+        </div>
+        <h1 class="fade-in-up" style="transition-delay: 0.1s;">
+            Sistema Inteligente de Detecção e Mitigação de <span>Gases Perigosos</span>
+        </h1>
+        <p class="fade-in-up" style="transition-delay: 0.2s;">
+            Uma infraestrutura IoT inteligente para automação preventiva industrial e residencial. Monitorização analítica contínua de dióxido de carbono, compostos orgânicos voláteis (VOC) e metano.
+        </p>
+        <div class="hero-cta fade-in-up" style="transition-delay: 0.3s;">
+            <a href="#dashboard" class="btn btn-primary">
+                Aceder ao Dashboard Live
+                <i data-lucide="arrow-right"></i>
+            </a>
+            <a href="#hardware" class="btn btn-secondary">Documentação Técnica</a>
+        </div>
+    </section>
+
+    <!-- INTERACTIVE DASHBOARD SECTION -->
+    <section class="dashboard-section wrapper" id="dashboard">
+        <div class="section-header fade-in-up">
+            <h2>Monitorização IoT em Tempo Real</h2>
+            <p>Abaixo encontra-se a simulação direta do firmware instalado no controlador central do protótipo, integrando telemetria ativa e reatividade imediata.</p>
+        </div>
+
+        <!-- Banner de Status Geral -->
+        <div class="status-hero fade-in-up" id="status-banner">
+            <div class="status-info">
+                <div class="status-indicator-circle" id="status-icon-container">
+                    <i data-lucide="shield-check" id="status-icon" style="width:32px;height:32px;"></i>
+                </div>
+                <div class="status-text">
+                    <h3 id="status-title">AMBIENTE SEGURO</h3>
+                    <p id="status-subtitle">Todos os sensores operam em índices ótimos de conformidade.</p>
+                </div>
+            </div>
+            
+            <div class="simulation-controls">
+                <button class="btn btn-secondary" id="btn-leak-simulate">
+                    <i data-lucide="flame" style="color:var(--danger)"></i> Simular Vazamento
+                </button>
+                <button class="btn btn-secondary" id="btn-leak-reset" style="display:none;">
+                    <i data-lucide="refresh-cw" style="color:var(--success)"></i> Normalizar Sistema
+                </button>
+            </div>
+        </div>
+
+        <!-- Layout de Painéis -->
+        <div class="dash-grid">
+            
+            <!-- Painel Esquerdo: Telemetria e Gráfico -->
+            <div class="glass-card fade-in-up">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                    <h3 style="font-family:var(--font-display); font-weight:700;">Telemetria de Sensores</h3>
+                    <div class="academic-badge" style="color: var(--text-muted)">
+                        <span class="spinning" style="display:inline-block; width:8px; height:8px; background:var(--primary); border-radius:50%; margin-right:4px;"></span> Live Feed
+                    </div>
+                </div>
+
+                <!-- Cards de Sensores -->
+                <div class="telemetry-grid">
+                    <!-- Sensor CO2 -->
+                    <div class="telemetry-card" id="card-co2">
+                        <div class="card-header">
+                            CO₂ (Dióxido de Carbono)
+                            <i data-lucide="wind" class="color-co2"></i>
+                        </div>
+                        <div class="telemetry-value">
+                            <span id="val-co2">412</span> <span class="unit">PPM</span>
+                        </div>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar-fill color-co2" id="bar-co2" style="width: 25%; background: #3b82f6;"></div>
+                        </div>
+                        <div class="telemetry-range">
+                            <span>Mín: 350</span>
+                            <span id="range-co2">Ideal</span>
+                            <span>Máx: 2000</span>
+                        </div>
+                    </div>
+
+                    <!-- Sensor Metano / Inflamáveis -->
+                    <div class="telemetry-card" id="card-meth">
+                        <div class="card-header">
+                            Metano / GLP
+                            <i data-lucide="flame" class="color-meth"></i>
+                        </div>
+                        <div class="telemetry-value">
+                            <span id="val-meth">0.0</span> <span class="unit">% LEL</span>
+                        </div>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar-fill" id="bar-meth" style="width: 0%; background: #8b5cf6;"></div>
+                        </div>
+                        <div class="telemetry-range">
+                            <span>Mín: 0</span>
+                            <span id="range-meth">Seguro</span>
+                            <span>Máx: 100</span>
+                        </div>
+                    </div>
+
+                    <!-- Sensor Temperatura -->
+                    <div class="telemetry-card">
+                        <div class="card-header">
+                            Temperatura
+                            <i data-lucide="thermometer" class="color-temp"></i>
+                        </div>
+                        <div class="telemetry-value">
+                            <span id="val-temp">24.5</span> <span class="unit">°C</span>
+                        </div>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar-fill" id="bar-temp" style="width: 49%; background: #f59e0b;"></div>
+                        </div>
+                        <div class="telemetry-range">
+                            <span>0°C</span>
+                            <span>Estável</span>
+                            <span>50°C</span>
+                        </div>
+                    </div>
+
+                    <!-- Sensor Humidade -->
+                    <div class="telemetry-card">
+                        <div class="card-header">
+                            Humidade Relativa
+                            <i data-lucide="droplet" class="color-hum"></i>
+                        </div>
+                        <div class="telemetry-value">
+                            <span id="val-hum">52</span> <span class="unit">%</span>
+                        </div>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar-fill" id="bar-hum" style="width: 52%; background: #06b6d4;"></div>
+                        </div>
+                        <div class="telemetry-range">
+                            <span>0%</span>
+                            <span>Apropriado</span>
+                            <span>100%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <h4 style="font-family:var(--font-display); font-weight:700; margin-top:1.5rem;">Histórico Dinâmico de Telemetria</h4>
+                <div class="chart-container">
+                    <canvas id="live-chart"></canvas>
+                </div>
+            </div>
+
+            <!-- Painel Direito: Atuadores Ativos de Segurança -->
+            <div class="glass-card fade-in-up" style="display: flex; flex-direction: column;">
+                <h3 style="font-family:var(--font-display); font-weight:700; margin-bottom:1.5rem;">Atuadores Integrados</h3>
+                <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:1.5rem;">
+                    Sistemas automatizados de atenuação e controle acionados instantaneamente sob condições inseguras.
+                </p>
+
+                <div class="actuators-panel">
+                    <!-- Atuador 1: Exaustor / Ventilação -->
+                    <div class="actuator-row" id="row-fan">
+                        <div class="actuator-meta">
+                            <div class="fan-icon" id="fan-icon-element">
+                                <i data-lucide="fan" style="width:32px; height:32px; color:var(--primary);"></i>
+                            </div>
+                            <div>
+                                <h4 style="font-size:0.95rem; font-weight:700;">Exaustor de Ventilação</h4>
+                                <p style="font-size:0.75rem; color:var(--text-muted);">Controle PWM Forçado</p>
+                            </div>
+                        </div>
+                        <div class="actuator-state" id="state-fan">DESATIVADO</div>
+                    </div>
+
+                    <!-- Atuador 2: Alarme Sonoro / Buzzer -->
+                    <div class="actuator-row" id="row-buzzer">
+                        <div class="actuator-meta">
+                            <i data-lucide="bell-ring" id="buzzer-icon-element" style="width:32px; height:32px; color:var(--text-muted);"></i>
+                            <div>
+                                <h4 style="font-size:0.95rem; font-weight:700;">Alarme Sonoro</h4>
+                                <p style="font-size:0.75rem; color:var(--text-muted);">Sirene de Alta Frequência</p>
+                            </div>
+                        </div>
+                        <div class="actuator-state" id="state-buzzer">DESATIVADO</div>
+                    </div>
+
+                    <!-- Atuador 3: Válvula Solenóide -->
+                    <div class="actuator-row" id="row-valve">
+                        <div class="actuator-meta">
+                            <i data-lucide="droplet-off" id="valve-icon-element" style="width:32px; height:32px; color:var(--success);"></i>
+                            <div>
+                                <h4 style="font-size:0.95rem; font-weight:700;">Corte de Combustível</h4>
+                                <p style="font-size:0.75rem; color:var(--text-muted);">Bloqueio de Válvula de Gás</p>
+                            </div>
+                        </div>
+                        <div class="actuator-state active-state" id="state-valve">ABERTA</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- COMPONENTES / ARQUITETURA DE HARDWARE -->
+    <section class="hardware-section" id="hardware">
+        <div class="wrapper">
+            <div class="section-header fade-in-up">
+                <h2>Componentes de Grau de Engenharia</h2>
+                <p>O hardware selecionado garante amostragem analítica rápida, confiabilidade em ambientes críticos e baixo consumo de energia.</p>
+            </div>
+
+            <div class="components-grid">
+                <!-- ESP32 -->
+                <div class="component-card fade-in-up">
+                    <div class="component-icon-box">
+                        <i data-lucide="cpu" style="width:28px;height:28px;"></i>
+                    </div>
+                    <h3>ESP32 NodeMCU</h3>
+                    <p>O cérebro do sistema. Microcontrolador dual-core robusto que executa o RTOS local, processa a filtragem de dados analógicos e faz a transmissão simultânea de telemetria.</p>
+                    <div class="component-specs">
+                        <div class="spec-item"><span class="spec-label">Processamento</span><span class="spec-value">Xtensa 32-bit LX6</span></div>
+                        <div class="spec-item"><span class="spec-label">Conectividade</span><span class="spec-value">Wi-Fi & BLE v4.2</span></div>
+                        <div class="spec-item"><span class="spec-label">Tensão de Op.</span><span class="spec-value">3.3V DC</span></div>
+                    </div>
+                </div>
+
+                <!-- MH-Z19C -->
+                <div class="component-card fade-in-up" style="transition-delay: 0.1s;">
+                    <div class="component-icon-box">
+                        <i data-lucide="activity" style="width:28px;height:28px;"></i>
+                    </div>
+                    <h3>Sensor MH-Z19C</h3>
+                    <p>Sensor infravermelho de CO₂ (NDIR) com compensação de temperatura integrada. Garante alta sensibilidade e excelente estabilidade de medição contra degradação ao longo do tempo.</p>
+                    <div class="component-specs">
+                        <div class="spec-item"><span class="spec-label">Tecnologia</span><span class="spec-value">Infravermelho Não Dispersivo</span></div>
+                        <div class="spec-item"><span class="spec-label">Range de Detecção</span><span class="spec-value">400 a 5000 PPM</span></div>
+                        <div class="spec-item"><span class="spec-label">Precisão</span><span class="spec-value">± 50ppm + 5%</span></div>
+                    </div>
+                </div>
+
+                <!-- BME680 -->
+                <div class="component-card fade-in-up" style="transition-delay: 0.2s;">
+                    <div class="component-icon-box">
+                        <i data-lucide="wind" style="width:28px;height:28px;"></i>
+                    </div>
+                    <h3>Sensor BME680</h3>
+                    <p>Sensor ambiental que deteta compostos orgânicos voláteis (VOC), temperatura, pressão atmosférica e humidade, proporcionando dados cruciais para a análise de qualidade do ar.</p>
+                    <div class="component-specs">
+                        <div class="spec-item"><span class="spec-label">Detecção</span><span class="spec-value">VOC / Etanol / CO</span></div>
+                        <div class="spec-item"><span class="spec-label">Tempo de Resposta</span><span class="spec-value">&lt; 1 segundo</span></div>
+                        <div class="spec-item"><span class="spec-label">Protocolo</span><span class="spec-value">I2C / SPI</span></div>
+                    </div>
+                </div>
+
+                <!-- MIPEX-04 -->
+                <div class="component-card fade-in-up" style="transition-delay: 0.3s;">
+                    <div class="component-icon-box">
+                        <i data-lucide="flame" style="width:28px;height:28px;"></i>
+                    </div>
+                    <h3>Sensor MIPEX-04</h3>
+                    <p>Sensor ótico infravermelho de alta tecnologia focado na medição de hidrocarbonetos e metano. Operação segura contra envenenamento químico e em ambientes perigosos.</p>
+                    <div class="component-specs">
+                        <div class="spec-item"><span class="spec-label">Alvos</span><span class="spec-value">Metano (CH4) e Propano</span></div>
+                        <div class="spec-item"><span class="spec-label">Consumo</span><span class="spec-value">Ultra-baixo (&lt; 5mW)</span></div>
+                        <div class="spec-item"><span class="spec-label">Segurança</span><span class="spec-value">Intrinsecamente Seguro</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SISTEMA EM AÇÃO / DIAGRAMA DE FLUXO -->
+    <section class="diagram-section wrapper" id="fluxo">
+        <div class="section-header fade-in-up">
+            <h2>Algoritmo de Intervenção e Operação</h2>
+            <p>Compreenda como o sistema transita de modo autônomo entre o rastreio passivo e a ação ativa de contenção e alerta.</p>
+        </div>
+
+        <div class="diagram-flow fade-in-up">
+            <!-- Passo 1 -->
+            <div class="flow-step">
+                <div class="flow-step-num">1</div>
+                <h4>Aquisição Contínua</h4>
+                <p>Os sensores analógicos e digitais lêem o ar ambiente a cada 500ms.</p>
+            </div>
+
+            <!-- Seta -->
+            <div class="flow-arrow"><i data-lucide="arrow-right" style="width:32px;height:32px;"></i></div>
+
+            <!-- Passo 2 -->
+            <div class="flow-step">
+                <div class="flow-step-num">2</div>
+                <h4>Filtro de Ruído</h4>
+                <p>O ESP32 aplica filtros de média móvel para prevenir alarmes falsos.</p>
+            </div>
+
+            <!-- Seta -->
+            <div class="flow-arrow"><i data-lucide="arrow-right" style="width:32px;height:32px;"></i></div>
+
+            <!-- Passo 3 -->
+            <div class="flow-step">
+                <div class="flow-step-num">3</div>
+                <h4>Análise de Limiares</h4>
+                <p>Os níveis são comparados aos limiares de segurança programados.</p>
+            </div>
+
+            <!-- Seta -->
+            <div class="flow-arrow"><i data-lucide="arrow-right" style="width:32px;height:32px;"></i></div>
+
+            <!-- Passo 4 -->
+            <div class="flow-step">
+                <div class="flow-step-num">4</div>
+                <h4>Mitigação Ativa</h4>
+                <p>Exaustores ativam por PWM, alertas disparam e a alimentação de gás é interrompida.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer>
+        <div class="wrapper">
+            <div class="footer-grid">
+                <div>
+                    <div class="logo" style="margin-bottom:1rem;">
+                        <i data-lucide="shield-alert" class="color-co2"></i>
+                        <span>GAS SHIELD</span>
+                    </div>
+                    <p style="max-width:350px; font-size:0.85rem;">Desenvolvimento de Hardware e Software voltado à segurança ocupacional e residencial.</p>
+                </div>
+                <div class="footer-credits" style="text-align: right;">
+                    <p><strong>Trabalho de Conclusão de Curso (TCC)</strong></p>
+                    <p>Curso Técnico em Eletrónica / Automação Industrial</p>
+                    <p>ETEC Trajano Camargo, Limeira-SP</p>
+                    <p style="margin-top:1rem; font-size:0.8rem; color:var(--primary);">© 2026 Todos os direitos reservados.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- ========================================================= */
+    /* JAVASCRIPT: LÓGICAS DE ANIMAÇÃO E SIMULADOR DA TELEMETRIA */
+    /* ========================================================= -->
+    <script>
+        // Inicialização dos ícones Lucide
+        lucide.createIcons();
+
+        // 1. ANIMAÇÕES DE SCROLL (Intersection Observer)
+        const appearOptions = {
+            threshold: 0.1,
+            rootMargin: "0px 0px -50px 0px"
+        };
+
+        const appearOnScroll = new IntersectionObserver(function(entries, appearOnScroll) {
+            entries.forEach(entry => {
+                if (!entry.isIntersecting) return;
+                entry.target.classList.add('appeared');
+                appearOnScroll.unobserve(entry.target);
+            });
+        }, appearOptions);
+
+        document.querySelectorAll('.fade-in-up').forEach(item => {
+            appearOnScroll.observe(item);
+        });
+
+        // 2. CANVAS BACKGROUND (Efeito Teia/Partículas Sombrias)
+        const canvas = document.getElementById('bg-canvas');
+        const ctx = canvas.getContext('2d');
+
+        let particles = [];
+        
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            initParticles();
+        }
+
+        function initParticles() {
+            particles = [];
+            const particleCount = Math.floor((canvas.width * canvas.height) / 15000);
+            for (let i = 0; i < particleCount; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    radius: Math.random() * 1.5 + 0.5,
+                    vx: (Math.random() - 0.5) * 0.4,
+                    vy: (Math.random() - 0.5) * 0.4
+                });
+            }
+        }
+
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+            
+            particles.forEach((p, idx) => {
+                p.x += p.vx;
+                p.y += p.vy;
+
+                if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+                if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Desenhar conexões próximas
+                for (let j = idx + 1; j < particles.length; j++) {
+                    const p2 = particles[j];
+                    const dist = Math.hypot(p.x - p2.x, p.y - p2.y);
+                    if (dist < 100) {
+                        ctx.strokeStyle = `rgba(0, 240, 255, ${0.15 * (1 - dist / 100)})`;
+                        ctx.lineWidth = 0.5;
+                        ctx.beginPath();
+                        ctx.moveTo(p.x, p.y);
+                        ctx.lineTo(p2.x, p2.y);
+                        ctx.stroke();
+                    }
+                }
+            });
+
+            requestAnimationFrame(animateParticles);
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+        animateParticles();
+
+        // 3. SIMULADOR DO SISTEMA DE TELEMETRIA E INCIDENTES
+        let isLeakSimulated = false;
+        
+        // Elementos UI de Valor
+        const valCo2 = document.getElementById('val-co2');
+        const valMeth = document.getElementById('val-meth');
+        const valTemp = document.getElementById('val-temp');
+        const valHum = document.getElementById('val-hum');
+
+        // Elementos UI de Barras de Progresso
+        const barCo2 = document.getElementById('bar-co2');
+        const barMeth = document.getElementById('bar-meth');
+        const barTemp = document.getElementById('bar-temp');
+        const barHum = document.getElementById('bar-hum');
+
+        // Textos Auxiliares de Status
+        const rangeCo2 = document.getElementById('range-co2');
+        const rangeMeth = document.getElementById('range-meth');
+
+        // Elementos de Status Geral
+        const statusBanner = document.getElementById('status-banner');
+        const statusIconContainer = document.getElementById('status-icon-container');
+        const statusIcon = document.getElementById('status-icon');
+        const statusTitle = document.getElementById('status-title');
+        const statusSubtitle = document.getElementById('status-subtitle');
+
+        // Botões de Simulação
+        const btnLeakSimulate = document.getElementById('btn-leak-simulate');
+        const btnLeakReset = document.getElementById('btn-leak-reset');
+
+        // Elementos de Atuadores
+        const rowFan = document.getElementById('row-fan');
+        const stateFan = document.getElementById('state-fan');
+        const fanIconElement = document.getElementById('fan-icon-element');
+
+        const rowBuzzer = document.getElementById('row-buzzer');
+        const stateBuzzer = document.getElementById('state-buzzer');
+        const buzzerIconElement = document.getElementById('buzzer-icon-element');
+
+        const rowValve = document.getElementById('row-valve');
+        const stateValve = document.getElementById('state-valve');
+        const valveIconElement = document.getElementById('valve-icon-element');
+
+        // Valores de Telemetria Dinâmicos Atuais
+        let currentCo2 = 412;
+        let currentMeth = 0.0;
+        let currentTemp = 24.5;
+        let currentHum = 52.0;
+
+        // Histórico de CO2 para o Gráfico (Últimos 20 pontos)
+        let graphData = Array(20).fill(412);
+        const chartCanvas = document.getElementById('live-chart');
+        const chartCtx = chartCanvas.getContext('2d');
+
+        function resizeChart() {
+            chartCanvas.width = chartCanvas.parentElement.clientWidth;
+            chartCanvas.height = chartCanvas.parentElement.clientHeight;
+        }
+        window.addEventListener('resize', resizeChart);
+        resizeChart();
+
+        // Atualizador de Valores Físicos Simulado
+        setInterval(() => {
+            if (!isLeakSimulated) {
+                // Oscilações Normais do Ambiente
+                currentCo2 += (Math.random() - 0.5) * 8;
+                currentCo2 = Math.max(390, Math.min(480, currentCo2));
+                
+                currentMeth = Math.max(0.0, currentMeth + (Math.random() - 0.5) * 0.05);
+                if (currentMeth < 0.1) currentMeth = 0.0; // Zerar flutuação de ruído próximo ao zero
+
+                currentTemp += (Math.random() - 0.5) * 0.1;
+                currentTemp = Math.max(23.8, Math.min(25.5, currentTemp));
+
+                currentHum += (Math.random() - 0.5) * 0.3;
+                currentHum = Math.max(48.0, Math.min(54.0, currentHum));
+            } else {
+                // Rápido incremento simulando vazamento de Gás
+                currentCo2 += Math.random() * 120 + 50;
+                currentCo2 = Math.min(3200, currentCo2);
+
+                currentMeth += Math.random() * 2.5 + 0.8;
+                currentMeth = Math.min(42.5, currentMeth);
+
+                currentTemp += Math.random() * 0.5;
+                currentTemp = Math.min(31.2, currentTemp);
+
+                currentHum -= Math.random() * 0.8;
+                currentHum = Math.max(35.0, currentHum);
+            }
+
+            // Atualização dos componentes gráficos e textos
+            updateDashboardUI();
+            
+            // Gravação no Histórico para o Gráfico
+            graphData.push(currentCo2);
+            graphData.shift();
+            drawChart();
+
+        }, 1000);
+
+        // Lógica de Renderização Dinâmica de UI
+        function updateDashboardUI() {
+            // Textos
+            valCo2.innerText = Math.round(currentCo2);
+            valMeth.innerText = currentMeth.toFixed(1);
+            valTemp.innerText = currentTemp.toFixed(1);
+            valHum.innerText = Math.round(currentHum);
+
+            // Percentuais das Barras de Progresso
+            const pctCo2 = Math.min(100, (currentCo2 / 2000) * 100);
+            barCo2.style.width = pctCo2 + '%';
+            
+            const pctMeth = Math.min(100, (currentMeth / 50) * 100);
+            barMeth.style.width = pctMeth + '%';
+
+            const pctTemp = Math.min(100, (currentTemp / 50) * 100);
+            barTemp.style.width = pctTemp + '%';
+
+            const pctHum = currentHum;
+            barHum.style.width = pctHum + '%';
+
+            // Avaliação e Atuação Dinâmica de Alertas
+            if (currentCo2 > 1500 || currentMeth > 15.0) {
+                // CONDUTA DE PERIGO ATIVA
+                statusBanner.classList.add('alert-active');
+                statusTitle.innerText = "PERIGO: VAZAMENTO DETECTADO";
+                statusTitle.style.color = "var(--danger)";
+                statusSubtitle.innerText = "Vazamento crítico! Exaustor em potência máxima, corte de gás efetuado.";
+                
+                statusIconContainer.style.background = "rgba(239, 68, 68, 0.2)";
+                statusIconContainer.style.color = "var(--danger)";
+                statusIcon.setAttribute('data-lucide', 'alert-triangle');
+
+                // Atualizar Cards para Alerta Visual
+                document.getElementById('card-co2').style.borderColor = currentCo2 > 1500 ? 'var(--danger)' : 'var(--border-glass)';
+                document.getElementById('card-meth').style.borderColor = currentMeth > 15.0 ? 'var(--danger)' : 'var(--border-glass)';
+                
+                rangeCo2.innerText = currentCo2 > 1500 ? "PERIGOSO" : "ALTO";
+                rangeCo2.style.color = "var(--danger)";
+                rangeMeth.innerText = currentMeth > 15.0 ? "CRÍTICO" : "ALTO";
+                rangeMeth.style.color = "var(--danger)";
+
+                // Comportamento dos Atuadores
+                stateFan.innerText = "ATIVO (100% PWM)";
+                stateFan.className = "actuator-state danger-state";
+                rowFan.classList.add('active');
+                fanIconElement.classList.add('spinning');
+
+                stateBuzzer.innerText = "ALERTA ATIVO";
+                stateBuzzer.className = "actuator-state danger-state";
+                rowBuzzer.classList.add('active');
+                buzzerIconElement.style.color = "var(--danger)";
+                buzzerIconElement.classList.add('spinning'); // Efeito visual de oscilação do ícone
+
+                stateValve.innerText = "BLOQUEADA";
+                stateValve.className = "actuator-state danger-state";
+                rowValve.classList.add('active');
+                valveIconElement.setAttribute('data-lucide', 'droplet-off');
+                valveIconElement.style.color = "var(--danger)";
+
+            } else if (currentCo2 > 900 || currentMeth > 5.0) {
+                // CONDUTA DE ALERTA MODERADO
+                statusBanner.className = "status-hero alert-active"; // ativa o brilho de pulso
+                statusTitle.innerText = "ALERTA: NÍVEIS ELEVADOS";
+                statusTitle.style.color = "var(--warning)";
+                statusSubtitle.innerText = "Atenção ambiental. Sistemas preventivos de extração iniciados.";
+                
+                statusIconContainer.style.background = "rgba(245, 158, 11, 0.2)";
+                statusIconContainer.style.color = "var(--warning)";
+                statusIcon.setAttribute('data-lucide', 'alert-circle');
+
+                rangeCo2.innerText = "ANORMAL";
+                rangeCo2.style.color = "var(--warning)";
+                rangeMeth.innerText = "ALERTA";
+                rangeMeth.style.color = "var(--warning)";
+
+                // Comportamento dos Atuadores
+                stateFan.innerText = "ATIVO (50% PWM)";
+                stateFan.className = "actuator-state active-state";
+                rowFan.classList.add('active');
+                fanIconElement.classList.add('spinning');
+
+                stateBuzzer.innerText = "EM ESPERA";
+                stateBuzzer.className = "actuator-state";
+                rowBuzzer.classList.remove('active');
+                buzzerIconElement.style.color = "var(--text-muted)";
+                buzzerIconElement.classList.remove('spinning');
+
+                stateValve.innerText = "ABERTA";
+                stateValve.className = "actuator-state active-state";
+                rowValve.classList.remove('active');
+                valveIconElement.style.color = "var(--success)";
+
+            } else {
+                // ESTADO AMBIENTAL NORMAL
+                statusBanner.className = "status-hero";
+                statusTitle.innerText = "AMBIENTE SEGURO";
+                statusTitle.style.color = "var(--success)";
+                statusSubtitle.innerText = "Todos os sensores operam em índices ótimos de conformidade.";
+                
+                statusIconContainer.style.background = "rgba(16, 185, 129, 0.2)";
+                statusIconContainer.style.color = "var(--success)";
+                statusIcon.setAttribute('data-lucide', 'shield-check');
+
+                document.getElementById('card-co2').style.borderColor = 'var(--border-glass)';
+                document.getElementById('card-meth').style.borderColor = 'var(--border-glass)';
+
+                rangeCo2.innerText = "Ideal";
+                rangeCo2.style.color = "var(--text-muted)";
+                rangeMeth.innerText = "Seguro";
+                rangeMeth.style.color = "var(--text-muted)";
+
+                // Atuadores Desligados
+                stateFan.innerText = "DESATIVADO";
+                stateFan.className = "actuator-state";
+                rowFan.classList.remove('active');
+                fanIconElement.classList.remove('spinning');
+
+                stateBuzzer.innerText = "DESATIVADO";
+                stateBuzzer.className = "actuator-state";
+                rowBuzzer.classList.remove('active');
+                buzzerIconElement.style.color = "var(--text-muted)";
+                buzzerIconElement.classList.remove('spinning');
+
+                stateValve.innerText = "ABERTA";
+                stateValve.className = "actuator-state active-state";
+                rowValve.classList.remove('active');
+                valveIconElement.style.color = "var(--success)";
+            }
+
+            // Recriar ícones dinâmicos injetados por JS
+            lucide.createIcons();
+        }
+
+        // Desenhar Gráfico de Linha Customizado no Canvas (Alta Estética)
+        function drawChart() {
+            ctx.clearRect(0, 0, chartCanvas.width, chartCanvas.height); // limpar frame de animação anterior do canvas do gráfico
+            chartCtx.clearRect(0, 0, chartCanvas.width, chartCanvas.height);
+
+            const paddingLeft = 40;
+            const paddingRight = 10;
+            const paddingTop = 20;
+            const paddingBottom = 30;
+            
+            const plotWidth = chartCanvas.width - paddingLeft - paddingRight;
+            const plotHeight = chartCanvas.height - paddingTop - paddingBottom;
+
+            // Determinar extremos
+            const minVal = 0;
+            const maxVal = 3500; // Limiar superior de escala do CO2 simulado
+
+            // Desenhar Linhas de Grade de Background
+            chartCtx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
+            chartCtx.lineWidth = 1;
+            for (let i = 0; i <= 4; i++) {
+                const y = paddingTop + (plotHeight / 4) * i;
+                chartCtx.beginPath();
+                chartCtx.moveTo(paddingLeft, y);
+                chartCtx.lineTo(chartCanvas.width - paddingRight, y);
+                chartCtx.stroke();
+
+                // Escrever textos correspondentes do eixo Y
+                chartCtx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+                chartCtx.font = '9px Inter';
+                const valLabel = Math.round(maxVal - ((maxVal - minVal) / 4) * i);
+                chartCtx.fillText(valLabel + ' PPM', 5, y + 3);
+            }
+
+            // Plotagem da Curva de Dados
+            chartCtx.beginPath();
+            const points = graphData.map((val, idx) => {
+                const x = paddingLeft + (plotWidth / (graphData.length - 1)) * idx;
+                const y = paddingTop + plotHeight - ((val - minVal) / (maxVal - minVal)) * plotHeight;
+                return { x, y };
+            });
+
+            // Criar gradiente abaixo da curva (Fill Area)
+            const fillGradient = chartCtx.createLinearGradient(0, paddingTop, 0, paddingTop + plotHeight);
+            if (isLeakSimulated) {
+                fillGradient.addColorStop(0, 'rgba(239, 68, 68, 0.3)');
+                fillGradient.addColorStop(1, 'rgba(239, 68, 68, 0.0)');
+            } else {
+                fillGradient.addColorStop(0, 'rgba(0, 240, 255, 0.25)');
+                fillGradient.addColorStop(1, 'rgba(0, 240, 255, 0.0)');
+            }
+
+            // Traçar caminho para o preenchimento degradê
+            chartCtx.beginPath();
+            chartCtx.moveTo(points[0].x, paddingTop + plotHeight);
+            points.forEach(p => chartCtx.lineTo(p.x, p.y));
+            chartCtx.lineTo(points[points.length - 1].x, paddingTop + plotHeight);
+            chartCtx.closePath();
+            chartCtx.fillStyle = fillGradient;
+            chartCtx.fill();
+
+            // Traçar a linha principal
+            chartCtx.beginPath();
+            chartCtx.moveTo(points[0].x, points[0].y);
+            for (let i = 1; i < points.length; i++) {
+                // Desenhar curvas suaves com aproximação cúbica ou linear
+                chartCtx.lineTo(points[i].x, points[i].y);
+            }
+            chartCtx.strokeStyle = isLeakSimulated ? 'var(--danger)' : 'var(--primary)';
+            chartCtx.lineWidth = 2.5;
+            chartCtx.stroke();
+
+            // Desenhar Ponto Ativo mais Recente
+            const lastPoint = points[points.length - 1];
+            chartCtx.beginPath();
+            chartCtx.arc(lastPoint.x, lastPoint.y, 5, 0, Math.PI * 2);
+            chartCtx.fillStyle = isLeakSimulated ? 'var(--danger)' : 'var(--primary)';
+            chartCtx.fill();
+            
+            // Halo de Brilho no ponto final
+            chartCtx.beginPath();
+            chartCtx.arc(lastPoint.x, lastPoint.y, 10, 0, Math.PI * 2);
+            chartCtx.strokeStyle = isLeakSimulated ? 'rgba(239, 68, 68, 0.4)' : 'rgba(0, 240, 255, 0.4)';
+            chartCtx.lineWidth = 2;
+            chartCtx.stroke();
+        }
+
+        // Eventos dos Botões de Simulação
+        btnLeakSimulate.addEventListener('click', () => {
+            isLeakSimulated = true;
+            btnLeakSimulate.style.display = 'none';
+            btnLeakReset.style.display = 'inline-flex';
+        });
+
+        btnLeakReset.addEventListener('click', () => {
+            isLeakSimulated = false;
+            // Retorno gradual ao padrão
+            currentCo2 = 412;
+            currentMeth = 0.0;
+            currentTemp = 24.5;
+            currentHum = 52.0;
+            
+            btnLeakReset.style.display = 'none';
+            btnLeakSimulate.style.display = 'inline-flex';
+        });
+
+    </script>
+</body>
+</html>
