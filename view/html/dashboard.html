@@ -1,0 +1,1492 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aeris Guard - Monitoramento GLP</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b1220;
+      --bg-deep: #070d18;
+      --panel: rgba(21, 29, 47, 0.86);
+      --panel-strong: #151d2f;
+      --panel-soft: rgba(245, 247, 250, 0.035);
+      --border: rgba(245, 247, 250, 0.08);
+      --border-strong: rgba(245, 247, 250, 0.14);
+      --text: #f5f7fa;
+      --muted: #9aa8bd;
+      --faint: #637187;
+      --blue: #4e8dff;
+      --cyan: #14d8c4;
+      --green: #34d871;
+      --yellow: #ffc857;
+      --orange: #ff8a3d;
+      --red: #ff5757;
+      --shadow: 0 24px 80px rgba(0, 0, 0, 0.28);
+      --radius: 8px;
+      --sidebar: 216px;
+      --font-display: "Sora", sans-serif;
+      --font-body: "Inter", sans-serif;
+      --font-mono: "JetBrains Mono", monospace;
+      --ease: cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; }
+    body {
+      background:
+        radial-gradient(circle at 18% 0%, rgba(20, 216, 196, 0.08), transparent 28%),
+        radial-gradient(circle at 86% 18%, rgba(78, 141, 255, 0.08), transparent 30%),
+        linear-gradient(180deg, var(--bg) 0%, var(--bg-deep) 100%);
+      color: var(--text);
+      font-family: var(--font-body);
+      overflow-x: hidden;
+    }
+
+    button, input, select, textarea { font: inherit; }
+    button { color: inherit; }
+    a { color: inherit; text-decoration: none; }
+    .app { min-height: 100vh; display: grid; grid-template-columns: var(--sidebar) minmax(0, 1fr); }
+
+    .sidebar {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      padding: 24px 14px;
+      border-right: 1px solid var(--border);
+      background: rgba(7, 13, 24, 0.78);
+      backdrop-filter: blur(22px);
+      display: flex;
+      flex-direction: column;
+      gap: 26px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 4px 8px;
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: 18px;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-mark {
+      width: 32px;
+      height: 32px;
+      border-radius: 10px;
+      border: 1px solid rgba(20, 216, 196, 0.38);
+      color: var(--cyan);
+      display: grid;
+      place-items: center;
+      background: rgba(20, 216, 196, 0.08);
+      box-shadow: 0 0 22px rgba(20, 216, 196, 0.12);
+      font-weight: 900;
+    }
+
+    .nav { display: grid; gap: 6px; }
+    .nav-button {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border: 0;
+      border-radius: var(--radius);
+      padding: 12px 12px;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      font-weight: 600;
+      text-align: left;
+      transition: color .18s var(--ease), background .18s var(--ease), transform .18s var(--ease);
+    }
+
+    .nav-button:hover { color: var(--text); background: rgba(245, 247, 250, 0.045); }
+    .nav-button.active {
+      color: var(--cyan);
+      background: linear-gradient(90deg, rgba(20, 216, 196, 0.16), rgba(20, 216, 196, 0.05));
+      box-shadow: inset 2px 0 0 var(--cyan);
+    }
+    .nav-icon {
+      width: 22px;
+      height: 22px;
+      border-radius: 7px;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(245, 247, 250, 0.12);
+      font-size: 11px;
+      font-family: var(--font-mono);
+    }
+
+    .system-box {
+      margin-top: auto;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--panel-soft);
+      padding: 14px;
+      display: grid;
+      gap: 10px;
+    }
+    .system-box span { color: var(--muted); font-size: 12px; }
+    .live-line { display: flex; align-items: center; gap: 8px; color: var(--green); font-weight: 700; font-size: 13px; }
+    .live-dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; box-shadow: 0 0 0 6px rgba(52, 216, 113, 0.1); }
+    .version { color: var(--faint); font-size: 12px; padding-top: 10px; border-top: 1px solid var(--border); }
+
+    .main { min-width: 0; padding: 20px 22px 24px; }
+    .view { display: none; animation: enter .34s var(--ease); }
+    .view.active { display: block; }
+    @keyframes enter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+    .title-block h1 {
+      font-family: var(--font-display);
+      font-size: clamp(22px, 2vw, 30px);
+      line-height: 1;
+      margin: 0 0 6px;
+      letter-spacing: -0.03em;
+    }
+    .title-block p { margin: 0; color: var(--muted); font-size: 13px; }
+    .toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
+
+    .btn {
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius);
+      background: rgba(245, 247, 250, 0.045);
+      color: var(--text);
+      padding: 10px 13px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 13px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: background .18s var(--ease), transform .18s var(--ease), border-color .18s var(--ease);
+    }
+    .btn:hover { transform: translateY(-1px); border-color: rgba(20, 216, 196, 0.34); background: rgba(20, 216, 196, 0.08); }
+    .btn.primary { background: linear-gradient(135deg, var(--cyan), #28f0b4); color: #04140f; border-color: transparent; }
+    .btn.danger { background: rgba(255, 87, 87, 0.12); color: #ffb4b4; border-color: rgba(255, 87, 87, 0.26); }
+    .btn.small { padding: 8px 10px; font-size: 12px; }
+    .btn[disabled] { opacity: .55; cursor: wait; transform: none; }
+
+    .card {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background:
+        linear-gradient(180deg, rgba(245, 247, 250, 0.035), transparent),
+        var(--panel);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+    }
+    .card.pad { padding: 20px; }
+    .card-title {
+      margin: 0;
+      font-size: 14px;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      font-weight: 800;
+      color: var(--text);
+    }
+    .card-subtitle { margin: 6px 0 0; color: var(--muted); font-size: 12px; }
+    .card-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 20px 22px 0;
+    }
+
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 460px minmax(0, 1fr);
+      gap: 16px;
+      align-items: start;
+    }
+    .left-stack, .right-stack { display: grid; gap: 16px; }
+    .status-card { min-height: 474px; display: grid; gap: 18px; align-content: start; }
+
+    .gauge {
+      width: min(100%, 330px);
+      margin: 12px auto 0;
+      position: relative;
+      display: grid;
+      place-items: center;
+      min-height: 250px;
+    }
+    .gauge svg { width: 100%; height: auto; overflow: visible; filter: drop-shadow(0 0 18px rgba(20, 216, 196, 0.18)); }
+    .gauge .center {
+      position: absolute;
+      top: 79px;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+      width: 220px;
+    }
+    .status-icon {
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      margin: 0 auto 10px;
+      background: rgba(20, 216, 196, 0.1);
+      color: var(--status-color, var(--green));
+      font-family: var(--font-display);
+      font-weight: 900;
+      font-size: 22px;
+    }
+    .status-label {
+      color: var(--status-color, var(--green));
+      font-family: var(--font-display);
+      font-size: 18px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+    .status-message { margin: 8px 0 10px; color: var(--muted); font-size: 13px; }
+    .ppm-value { font-family: var(--font-mono); font-size: 52px; font-weight: 800; line-height: 1; }
+    .ppm-unit { color: var(--muted); font-size: 16px; margin-top: 4px; }
+    .gauge-scale { position: absolute; left: 44px; right: 43px; bottom: 26px; display: flex; justify-content: space-between; color: var(--muted); font-size: 12px; }
+    .status-meta {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: -8px;
+    }
+    .meta-tile {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--panel-soft);
+      padding: 12px;
+    }
+    .meta-tile span { display: block; color: var(--muted); font-size: 11px; margin-bottom: 7px; text-transform: uppercase; letter-spacing: .04em; }
+    .meta-tile strong { display: block; font-family: var(--font-mono); font-size: 13px; overflow-wrap: anywhere; }
+
+    .timeline-card { min-height: 342px; padding: 20px; }
+    .section-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 18px; }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 7px 10px;
+      color: var(--muted);
+      background: rgba(245, 247, 250, 0.035);
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .pill.live { color: var(--green); border-color: rgba(52, 216, 113, 0.18); }
+    .pill.alert { color: var(--red); border-color: rgba(255, 87, 87, 0.22); }
+    .timeline {
+      position: relative;
+      display: grid;
+      gap: 18px;
+      padding-left: 22px;
+      max-height: 248px;
+      overflow: auto;
+    }
+    .timeline::before {
+      content: "";
+      position: absolute;
+      top: 6px;
+      bottom: 6px;
+      left: 7px;
+      width: 1px;
+      background: linear-gradient(var(--green), var(--yellow), var(--red), var(--blue));
+      opacity: .56;
+    }
+    .event { position: relative; display: grid; grid-template-columns: 74px 1fr; gap: 10px; align-items: start; }
+    .event::before {
+      content: "";
+      position: absolute;
+      left: -20px;
+      top: 5px;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--event-color, var(--green));
+      box-shadow: 0 0 0 5px color-mix(in srgb, var(--event-color, var(--green)) 18%, transparent);
+    }
+    .event time { font-family: var(--font-mono); color: var(--muted); font-size: 12px; }
+    .event strong { display: block; font-size: 13px; margin-bottom: 3px; }
+    .event span { display: block; color: var(--muted); font-size: 12px; line-height: 1.45; }
+
+    .chart-card { min-height: 444px; overflow: hidden; }
+    .chart-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+    .chart-shell {
+      position: relative;
+      height: 310px;
+      margin: 16px 22px 0;
+      border: 1px solid rgba(245, 247, 250, 0.055);
+      background: linear-gradient(180deg, rgba(78, 141, 255, 0.025), rgba(20, 216, 196, 0.018));
+      overflow: hidden;
+      cursor: crosshair;
+    }
+    .chart-shell svg { width: 100%; height: 100%; display: block; }
+    .chart-tooltip {
+      position: absolute;
+      min-width: 112px;
+      padding: 10px 12px;
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius);
+      background: rgba(8, 14, 25, 0.92);
+      box-shadow: 0 20px 50px rgba(0,0,0,.36);
+      pointer-events: none;
+      transform: translate(-50%, -112%);
+      opacity: 0;
+      transition: opacity .12s ease;
+      font-size: 12px;
+    }
+    .chart-tooltip strong { display: block; font-family: var(--font-mono); font-size: 15px; margin-top: 4px; }
+    .chart-tooltip.show { opacity: 1; }
+    .chart-summary {
+      margin: 14px 22px 22px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+    }
+    .summary-cell { text-align: center; border-right: 1px solid var(--border); }
+    .summary-cell:last-child { border-right: 0; }
+    .summary-cell span { display: block; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+    .summary-cell strong { font-family: var(--font-mono); font-size: 24px; color: var(--cyan); }
+    .summary-cell.warning strong { color: var(--orange); }
+    .summary-cell small { color: var(--muted); font-weight: 700; }
+
+    .metric-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+    .metric-card {
+      min-height: 132px;
+      padding: 18px;
+      display: grid;
+      grid-template-columns: 42px 1fr;
+      align-items: start;
+      gap: 14px;
+    }
+    .metric-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      color: var(--cyan);
+      background: rgba(20, 216, 196, 0.09);
+      font-family: var(--font-mono);
+      font-weight: 900;
+      border: 1px solid rgba(20, 216, 196, 0.1);
+    }
+    .metric-card span { display: block; color: var(--muted); font-size: 12px; text-transform: uppercase; margin-bottom: 8px; }
+    .metric-card strong { font-family: var(--font-display); font-size: 28px; line-height: 1; }
+    .metric-card small { display: block; margin-top: 8px; color: var(--muted); font-size: 12px; }
+    .progress { height: 7px; border-radius: 99px; overflow: hidden; background: rgba(245, 247, 250, 0.1); margin-top: 14px; grid-column: 1 / -1; }
+    .progress span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--cyan), rgba(245, 247, 250, 0.45)); }
+    .signal-bars { display: inline-grid; grid-auto-flow: column; gap: 3px; align-items: end; margin-left: 6px; height: 18px; }
+    .signal-bars i { display: block; width: 4px; border-radius: 2px; background: var(--green); }
+    .signal-bars i:nth-child(1) { height: 6px; }
+    .signal-bars i:nth-child(2) { height: 9px; }
+    .signal-bars i:nth-child(3) { height: 13px; }
+    .signal-bars i:nth-child(4) { height: 17px; }
+
+    .sensors-panel { padding: 18px; }
+    .sensor-card-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+    .sensor-card {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: rgba(245, 247, 250, 0.03);
+      padding: 14px;
+      display: grid;
+      gap: 10px;
+    }
+    .sensor-card header { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+    .sensor-card h3 { margin: 0; font-size: 14px; }
+    .sensor-reading { display: flex; align-items: baseline; gap: 7px; }
+    .sensor-reading strong { font-family: var(--font-mono); font-size: 26px; }
+    .sensor-reading span { color: var(--muted); }
+    .sparkline { width: 100%; height: 44px; }
+    .sensor-status { color: var(--green); font-size: 12px; font-weight: 700; display: flex; gap: 8px; align-items: center; }
+    .sensor-status.offline { color: var(--red); }
+
+    .page-grid { display: grid; gap: 16px; }
+    .management-grid { display: grid; grid-template-columns: 360px minmax(0, 1fr); gap: 16px; align-items: start; }
+    .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+    .form-field { display: grid; gap: 7px; }
+    .form-field.full { grid-column: 1 / -1; }
+    .form-field label { color: var(--muted); font-size: 12px; font-weight: 700; }
+    .input {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: rgba(7, 13, 24, 0.76);
+      color: var(--text);
+      padding: 11px 12px;
+      outline: none;
+    }
+    textarea.input { min-height: 112px; resize: vertical; }
+    .input:focus { border-color: rgba(20, 216, 196, 0.5); box-shadow: 0 0 0 4px rgba(20, 216, 196, 0.08); }
+
+    .table-card { overflow: hidden; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 13px 14px; border-bottom: 1px solid var(--border); text-align: left; font-size: 13px; }
+    th { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; background: rgba(245, 247, 250, 0.028); }
+    tr:last-child td { border-bottom: 0; }
+    .status-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 6px 9px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--green);
+      background: rgba(52, 216, 113, 0.1);
+    }
+    .status-chip::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+    .status-chip.offline { color: var(--red); background: rgba(255, 87, 87, 0.1); }
+    .status-chip.warning { color: var(--yellow); background: rgba(255, 200, 87, 0.1); }
+    .status-chip.critical { color: var(--red); background: rgba(255, 87, 87, 0.12); }
+    .row-actions { display: flex; gap: 7px; flex-wrap: wrap; }
+
+    .filter-bar {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(130px, 1fr));
+      gap: 10px;
+      padding: 16px;
+    }
+    .pagination { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px 16px; color: var(--muted); font-size: 13px; border-top: 1px solid var(--border); }
+
+    .report-grid { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 16px; align-items: start; }
+    .report-metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .report-chart { height: 260px; margin-top: 18px; border: 1px solid var(--border); border-radius: var(--radius); background: rgba(7,13,24,.44); }
+    .critical-list { display: grid; gap: 10px; }
+    .critical-item { border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; background: var(--panel-soft); }
+    .critical-item strong { display: block; font-size: 13px; }
+    .critical-item span { color: var(--muted); font-size: 12px; }
+
+    .settings-layout { display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 16px; align-items: start; }
+    .settings-tabs { display: grid; gap: 8px; padding: 10px; }
+    .settings-tab { border: 0; border-radius: var(--radius); padding: 11px 12px; background: transparent; color: var(--muted); text-align: left; cursor: pointer; font-weight: 700; }
+    .settings-tab.active { color: var(--cyan); background: rgba(20,216,196,.1); }
+    .settings-pane { display: none; }
+    .settings-pane.active { display: block; }
+    .switch-list { display: grid; gap: 10px; }
+    .switch-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 13px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--panel-soft);
+    }
+    .switch-row span { color: var(--muted); font-size: 12px; }
+    .switch-row input { width: 20px; height: 20px; accent-color: var(--cyan); }
+
+    .support-layout { display: grid; grid-template-columns: 310px minmax(0, 1fr) 300px; gap: 16px; align-items: stretch; }
+    .conversation-list { display: grid; gap: 10px; }
+    .conversation { border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; background: var(--panel-soft); cursor: pointer; }
+    .conversation.active { border-color: rgba(20,216,196,.4); background: rgba(20,216,196,.075); }
+    .conversation strong { display: block; font-size: 13px; }
+    .conversation span { color: var(--muted); font-size: 12px; }
+    .chat-card { min-height: 620px; display: grid; grid-template-rows: auto 1fr auto; overflow: hidden; }
+    .chat-header { padding: 18px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; gap: 12px; }
+    .chat-stream { padding: 18px 20px; display: grid; align-content: start; gap: 12px; overflow: auto; }
+    .message { max-width: 76%; border: 1px solid var(--border); border-radius: 14px; padding: 12px; background: rgba(245,247,250,.045); }
+    .message.out { justify-self: end; background: rgba(20,216,196,.1); border-color: rgba(20,216,196,.18); }
+    .message strong { display: block; font-size: 12px; margin-bottom: 5px; }
+    .message p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
+    .message small { display: block; margin-top: 7px; color: var(--faint); font-size: 11px; }
+    .chat-compose { border-top: 1px solid var(--border); padding: 14px; display: grid; grid-template-columns: 1fr auto auto; gap: 10px; }
+    .contact-grid { display: grid; gap: 10px; }
+    .contact-card { padding: 14px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--panel-soft); }
+    .contact-card span { display: block; color: var(--muted); font-size: 12px; margin-bottom: 6px; }
+    .contact-card strong { font-size: 13px; overflow-wrap: anywhere; }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      z-index: 80;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: rgba(3, 7, 14, 0.72);
+      backdrop-filter: blur(10px);
+    }
+    .modal.open { display: flex; }
+    .modal-card { width: min(560px, 100%); }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; }
+
+    .toast {
+      position: fixed;
+      right: 20px;
+      bottom: 20px;
+      z-index: 90;
+      min-width: 280px;
+      max-width: min(420px, calc(100vw - 32px));
+      padding: 14px 16px;
+      border-radius: var(--radius);
+      border: 1px solid rgba(20, 216, 196, .28);
+      background: rgba(10, 18, 32, .96);
+      box-shadow: 0 22px 70px rgba(0,0,0,.36);
+      opacity: 0;
+      transform: translateY(12px);
+      pointer-events: none;
+      transition: opacity .22s var(--ease), transform .22s var(--ease);
+      font-weight: 700;
+      font-size: 13px;
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+
+    @media (max-width: 1360px) {
+      .dashboard-grid { grid-template-columns: 390px minmax(0, 1fr); }
+      .sensor-card-grid, .metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .filter-bar { grid-template-columns: repeat(3, 1fr); }
+      .support-layout { grid-template-columns: 280px minmax(0, 1fr); }
+      .support-side { grid-column: 1 / -1; }
+    }
+
+    @media (max-width: 980px) {
+      .app { grid-template-columns: 1fr; }
+      .sidebar { position: relative; height: auto; flex-direction: row; flex-wrap: wrap; align-items: center; }
+      .brand { width: 100%; }
+      .nav { grid-template-columns: repeat(3, 1fr); width: 100%; }
+      .system-box { width: 100%; }
+      .dashboard-grid, .management-grid, .report-grid, .settings-layout, .support-layout { grid-template-columns: 1fr; }
+      .main { padding: 16px; }
+      .chart-summary, .report-metrics { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (max-width: 680px) {
+      .nav { grid-template-columns: 1fr 1fr; }
+      .topbar { align-items: flex-start; flex-direction: column; }
+      .toolbar { justify-content: flex-start; }
+      .status-meta, .metric-grid, .sensor-card-grid, .form-grid, .filter-bar, .chart-summary, .report-metrics { grid-template-columns: 1fr; }
+      .summary-cell { border-right: 0; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+      .summary-cell:last-child { border-bottom: 0; }
+      .chat-compose { grid-template-columns: 1fr; }
+      th:nth-child(4), td:nth-child(4), th:nth-child(5), td:nth-child(5) { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <a class="brand" href="#dashboard" data-view-link="dashboard">
+        <span class="brand-mark">A</span>
+        <span>Aeris Guard</span>
+      </a>
+      <nav class="nav" aria-label="Navegacao principal">
+        <button class="nav-button active" type="button" data-view-link="dashboard"><span class="nav-icon">DB</span>Dashboard</button>
+        <button class="nav-button" type="button" data-view-link="sensores"><span class="nav-icon">SN</span>Sensores</button>
+        <button class="nav-button" type="button" data-view-link="historico"><span class="nav-icon">HS</span>Historico</button>
+        <button class="nav-button" type="button" data-view-link="relatorios"><span class="nav-icon">RP</span>Relatorios</button>
+        <button class="nav-button" type="button" data-view-link="configuracoes"><span class="nav-icon">CF</span>Configuracoes</button>
+        <button class="nav-button" type="button" data-view-link="suporte"><span class="nav-icon">SP</span>Suporte</button>
+      </nav>
+      <div class="system-box">
+        <span>Sistema</span>
+        <div class="live-line"><i class="live-dot"></i><strong>Operacional</strong></div>
+        <div class="version">Versao 1.0.0</div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <section class="view active" id="view-dashboard">
+        <div class="topbar">
+          <div class="title-block">
+            <h1>Dashboard</h1>
+            <p>Monitoramento residencial de vazamento de GLP em tempo real.</p>
+          </div>
+          <div class="toolbar">
+            <button class="btn small" type="button" id="resetSimulation">Normalizar</button>
+            <button class="btn danger" type="button" id="simulateLeak">Simular vazamento</button>
+          </div>
+        </div>
+
+        <div class="dashboard-grid">
+          <div class="left-stack">
+            <article class="card pad status-card" id="statusCard">
+              <div class="section-head">
+                <div>
+                  <h2 class="card-title">Status Geral</h2>
+                  <p class="card-subtitle">Ambiente monitorado: Residencia principal</p>
+                </div>
+                <span class="pill live"><i class="live-dot"></i>Ao vivo</span>
+              </div>
+
+              <div class="gauge">
+                <svg viewBox="0 0 320 210" aria-hidden="true">
+                  <defs>
+                    <linearGradient id="gaugeGradient" x1="36" y1="164" x2="284" y2="164" gradientUnits="userSpaceOnUse">
+                      <stop offset="0%" stop-color="#14d8c4"/>
+                      <stop offset="45%" stop-color="#34d871"/>
+                      <stop offset="67%" stop-color="#ffc857"/>
+                      <stop offset="82%" stop-color="#ff8a3d"/>
+                      <stop offset="100%" stop-color="#ff5757"/>
+                    </linearGradient>
+                  </defs>
+                  <path d="M42 164 A118 118 0 0 1 278 164" fill="none" stroke="rgba(245,247,250,0.08)" stroke-width="12" stroke-linecap="round"/>
+                  <path d="M42 164 A118 118 0 0 1 278 164" fill="none" stroke="url(#gaugeGradient)" stroke-width="12" stroke-linecap="round"/>
+                  <path id="gaugeNeedle" d="M160 164 L160 62" stroke="var(--status-color, #34d871)" stroke-width="4" stroke-linecap="round"/>
+                  <circle cx="160" cy="164" r="8" fill="var(--status-color, #34d871)"/>
+                </svg>
+                <div class="center">
+                  <div class="status-icon" id="statusIcon">G</div>
+                  <div class="status-label" id="statusLabel">Seguro</div>
+                  <div class="status-message" id="statusMessage">Nenhum vazamento detectado</div>
+                  <div class="ppm-value" id="currentPpm">18</div>
+                  <div class="ppm-unit">ppm</div>
+                </div>
+                <div class="gauge-scale"><span>0 ppm</span><span>250 ppm</span></div>
+              </div>
+
+              <div class="status-meta">
+                <div class="meta-tile"><span>Ultima leitura</span><strong id="lastReadingTime">Agora</strong></div>
+                <div class="meta-tile"><span>Sensor responsavel</span><strong id="responsibleSensor">Cozinha</strong></div>
+                <div class="meta-tile"><span>Estado geral</span><strong id="systemState">Operacional</strong></div>
+                <div class="meta-tile"><span>Data</span><strong id="lastReadingDate">--/--/----</strong></div>
+              </div>
+            </article>
+
+            <article class="card timeline-card">
+              <div class="section-head">
+                <h2 class="card-title">Eventos Recentes</h2>
+                <span class="pill alert"><i class="live-dot"></i>Tempo real</span>
+              </div>
+              <div class="timeline" id="eventTimeline"></div>
+              <div style="border-top:1px solid var(--border); margin-top:18px; padding-top:14px;">
+                <button class="btn small" type="button" data-view-link="historico">Ver todos os eventos</button>
+              </div>
+            </article>
+          </div>
+
+          <div class="right-stack">
+            <article class="card chart-card">
+              <div class="card-header">
+                <div>
+                  <h2 class="card-title">Concentracao de GLP (ppm)</h2>
+                  <p class="card-subtitle">Linha suave com limites de seguranca, alerta e critico.</p>
+                </div>
+                <div class="chart-actions">
+                  <button class="btn small active-range" type="button" data-range="today">Hoje</button>
+                  <button class="btn small" type="button" data-range="yesterday">Ontem</button>
+                  <button class="btn small" type="button" data-range="24h">24 horas</button>
+                  <span class="pill live"><i class="live-dot"></i>Ao vivo</span>
+                </div>
+              </div>
+              <div class="chart-shell" id="chartShell">
+                <svg id="mainChart" viewBox="0 0 920 320" preserveAspectRatio="none" aria-label="Grafico de concentracao de GLP">
+                  <defs>
+                    <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stop-color="#14d8c4" stop-opacity=".36"/>
+                      <stop offset="100%" stop-color="#14d8c4" stop-opacity="0"/>
+                    </linearGradient>
+                  </defs>
+                  <g id="chartGrid"></g>
+                  <path id="chartAreaPath" fill="url(#areaGradient)" opacity=".95"></path>
+                  <path id="chartLinePath" fill="none" stroke="#14d8c4" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>
+                  <g id="chartPoints"></g>
+                  <line id="hoverLine" y1="26" y2="284" stroke="rgba(245,247,250,.22)" stroke-width="1" opacity="0"></line>
+                  <circle id="hoverDot" r="5" fill="#14d8c4" stroke="#f5f7fa" stroke-width="2" opacity="0"></circle>
+                </svg>
+                <div class="chart-tooltip" id="chartTooltip"></div>
+              </div>
+              <div class="chart-summary">
+                <div class="summary-cell"><span>Minimo</span><strong id="statMin">12</strong> <small>ppm</small></div>
+                <div class="summary-cell"><span>Media</span><strong id="statAvg">32</strong> <small>ppm</small></div>
+                <div class="summary-cell warning"><span>Maximo</span><strong id="statMax">98</strong> <small>ppm</small></div>
+                <div class="summary-cell"><span>Ultima leitura</span><strong id="statLast">18</strong> <small>ppm</small></div>
+              </div>
+            </article>
+
+            <div class="metric-grid">
+              <article class="card metric-card">
+                <div class="metric-icon">BT</div>
+                <div><span>Autonomia estimada</span><strong><b id="batteryDays">32</b> <small>dias</small></strong><small>Baseado no consumo atual</small></div>
+                <div class="progress"><span id="batteryProgress" style="width:72%"></span></div>
+              </article>
+              <article class="card metric-card">
+                <div class="metric-icon">MQ</div>
+                <div><span>Rede</span><strong id="networkStatus" style="color:var(--green)">Online</strong><small>MQTT estavel, IP: <b id="ipAddress">192.168.1.45</b></small></div>
+                <div class="progress"><span style="width:86%"></span></div>
+              </article>
+              <article class="card metric-card">
+                <div class="metric-icon">SN</div>
+                <div><span>Sensores</span><strong><b id="onlineSensors">4</b> / <b id="totalSensors">4</b></strong><small>Todos operacionais</small></div>
+                <div class="progress"><span id="sensorProgress" style="width:100%"></span></div>
+              </article>
+              <article class="card metric-card">
+                <div class="metric-icon">UP</div>
+                <div><span>Ultima atualizacao</span><strong id="lastUpdateClock">15:37:40</strong><small><i class="live-dot" style="display:inline-block;color:var(--green);vertical-align:middle"></i> Agora</small></div>
+              </article>
+            </div>
+
+            <article class="card sensors-panel">
+              <div class="section-head">
+                <h2 class="card-title">Sensores Instalados</h2>
+                <button class="btn small" type="button" data-view-link="sensores">Gerenciar Sensores</button>
+              </div>
+              <div class="sensor-card-grid" id="dashboardSensors"></div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" id="view-sensores">
+        <div class="topbar">
+          <div class="title-block"><h1>Sensores</h1><p>Cadastre, edite, teste comunicacao e acompanhe cada ponto monitorado.</p></div>
+          <div class="toolbar"><button class="btn primary" type="button" id="newSensorButton">Cadastrar sensor</button></div>
+        </div>
+        <div class="management-grid">
+          <article class="card pad">
+            <h2 class="card-title">Resumo da malha</h2>
+            <p class="card-subtitle">Controle de cobertura residencial.</p>
+            <div class="status-meta" style="margin-top:18px">
+              <div class="meta-tile"><span>Online</span><strong id="sensorPageOnline">4</strong></div>
+              <div class="meta-tile"><span>Offline</span><strong id="sensorPageOffline">0</strong></div>
+              <div class="meta-tile"><span>Firmware</span><strong>1.0.7</strong></div>
+              <div class="meta-tile"><span>Latencia media</span><strong id="latencyAvg">18 ms</strong></div>
+            </div>
+            <button class="btn" type="button" id="firmwareAllButton" style="margin-top:16px;width:100%">Atualizar firmware simulado</button>
+          </article>
+          <article class="card table-card">
+            <table>
+              <thead>
+                <tr><th>Nome</th><th>Ambiente</th><th>ID</th><th>Status</th><th>Ultima leitura</th><th>Acoes</th></tr>
+              </thead>
+              <tbody id="sensorTableBody"></tbody>
+            </table>
+          </article>
+        </div>
+      </section>
+
+      <section class="view" id="view-historico">
+        <div class="topbar">
+          <div class="title-block"><h1>Historico</h1><p>Tabela completa de leituras, eventos e alertas da residencia.</p></div>
+          <div class="toolbar">
+            <button class="btn small" type="button" id="exportCsv">Exportar CSV</button>
+            <button class="btn small" type="button" id="exportExcel">Exportar Excel</button>
+            <button class="btn small" type="button" id="exportPdf">Exportar PDF</button>
+          </div>
+        </div>
+        <article class="card table-card">
+          <div class="filter-bar">
+            <input class="input" id="filterSearch" placeholder="Pesquisar">
+            <select class="input" id="filterSensor"></select>
+            <select class="input" id="filterStatus">
+              <option value="">Todos os status</option>
+              <option value="normal">Normal</option>
+              <option value="aviso">Aviso</option>
+              <option value="alerta">Alerta</option>
+              <option value="critico">Critico</option>
+            </select>
+            <input class="input" id="filterMin" type="number" placeholder="Min ppm">
+            <input class="input" id="filterMax" type="number" placeholder="Max ppm">
+            <input class="input" id="filterPeriod" type="date">
+          </div>
+          <table>
+            <thead>
+              <tr><th data-sort="time">Data/Hora</th><th data-sort="sensor">Sensor</th><th data-sort="ppm">Concentracao</th><th data-sort="status">Status</th><th>Evento</th><th>Detalhes</th></tr>
+            </thead>
+            <tbody id="historyTableBody"></tbody>
+          </table>
+          <div class="pagination">
+            <span id="historyCount">0 registros</span>
+            <div class="toolbar"><button class="btn small" id="prevPage" type="button">Anterior</button><span id="pageInfo">1/1</span><button class="btn small" id="nextPage" type="button">Proxima</button></div>
+          </div>
+        </article>
+      </section>
+
+      <section class="view" id="view-relatorios">
+        <div class="topbar">
+          <div class="title-block"><h1>Relatorios</h1><p>Indicadores prontos para auditoria, manutencao e acompanhamento operacional.</p></div>
+          <div class="toolbar">
+            <select class="input" id="reportType" style="width:180px"><option>Diario</option><option>Semanal</option><option>Mensal</option><option>Personalizado</option></select>
+            <button class="btn small" type="button" id="generateReport">Gerar relatorio</button>
+          </div>
+        </div>
+        <div class="report-grid">
+          <article class="card pad">
+            <div class="section-head"><h2 class="card-title">Relatorio operacional</h2><span class="pill" id="reportPeriodLabel">Hoje</span></div>
+            <div class="report-metrics">
+              <div class="meta-tile"><span>Tempo em operacao</span><strong id="reportUptime">23h 42m</strong></div>
+              <div class="meta-tile"><span>Numero de alertas</span><strong id="reportAlerts">1</strong></div>
+              <div class="meta-tile"><span>Maior concentracao</span><strong id="reportMax">98 ppm</strong></div>
+              <div class="meta-tile"><span>Menor concentracao</span><strong id="reportMin">8 ppm</strong></div>
+              <div class="meta-tile"><span>Media</span><strong id="reportAvg">32 ppm</strong></div>
+              <div class="meta-tile"><span>Tempo offline</span><strong id="reportOffline">0m</strong></div>
+            </div>
+            <svg class="report-chart" id="reportChart" viewBox="0 0 680 260" preserveAspectRatio="none"></svg>
+            <div class="toolbar" style="margin-top:16px;justify-content:flex-start">
+              <button class="btn small" type="button" data-export-report="PDF">Exportar PDF</button>
+              <button class="btn small" type="button" data-export-report="Excel">Exportar Excel</button>
+              <button class="btn small" type="button" data-export-report="CSV">Exportar CSV</button>
+            </div>
+          </article>
+          <aside class="card pad">
+            <h2 class="card-title">Eventos criticos</h2>
+            <p class="card-subtitle">Ocorrencias que exigem atencao.</p>
+            <div class="critical-list" id="criticalEvents" style="margin-top:16px"></div>
+          </aside>
+        </div>
+      </section>
+
+      <section class="view" id="view-configuracoes">
+        <div class="topbar">
+          <div class="title-block"><h1>Configuracoes</h1><p>Preferencias da residencia, rede, alertas, seguranca e sistema.</p></div>
+          <div class="toolbar"><button class="btn primary" type="button" id="saveSettings">Salvar configuracoes</button></div>
+        </div>
+        <div class="settings-layout">
+          <aside class="card settings-tabs">
+            <button class="settings-tab active" data-settings-tab="geral" type="button">Geral</button>
+            <button class="settings-tab" data-settings-tab="sensores" type="button">Sensores</button>
+            <button class="settings-tab" data-settings-tab="notificacoes" type="button">Notificacoes</button>
+            <button class="settings-tab" data-settings-tab="rede" type="button">Rede</button>
+            <button class="settings-tab" data-settings-tab="seguranca" type="button">Seguranca</button>
+            <button class="settings-tab" data-settings-tab="sistema" type="button">Sistema</button>
+          </aside>
+          <article class="card pad">
+            <div class="settings-pane active" id="settings-geral">
+              <div class="form-grid">
+                <div class="form-field"><label>Nome da residencia</label><input class="input" value="Residencia principal"></div>
+                <div class="form-field"><label>Endereco</label><input class="input" value="Rua das Palmeiras, 120"></div>
+                <div class="form-field"><label>Idioma</label><select class="input"><option>Portugues (Brasil)</option><option>English</option><option>Espanol</option></select></div>
+                <div class="form-field"><label>Tema</label><select class="input"><option>Dark Premium</option><option>Claro</option><option>Automatico</option></select></div>
+                <div class="form-field full"><label>Fuso horario</label><select class="input"><option>America/Sao_Paulo</option><option>UTC</option></select></div>
+              </div>
+            </div>
+            <div class="settings-pane" id="settings-sensores">
+              <div class="form-grid">
+                <div class="form-field"><label>Limite seguro</label><input class="input" type="number" value="50"></div>
+                <div class="form-field"><label>Limite de alerta</label><input class="input" type="number" value="150"></div>
+                <div class="form-field"><label>Limite critico</label><input class="input" type="number" value="250"></div>
+                <div class="form-field"><label>Intervalo de leitura</label><select class="input"><option>5 segundos</option><option>15 segundos</option><option>1 minuto</option></select></div>
+              </div>
+            </div>
+            <div class="settings-pane" id="settings-notificacoes">
+              <div class="switch-list">
+                <label class="switch-row"><strong>WhatsApp<br><span>Enviar alertas criticos aos moradores.</span></strong><input type="checkbox" checked></label>
+                <label class="switch-row"><strong>Email<br><span>Resumo diario e eventos importantes.</span></strong><input type="checkbox" checked></label>
+                <label class="switch-row"><strong>Push<br><span>Alertas instantaneos no aplicativo.</span></strong><input type="checkbox" checked></label>
+                <label class="switch-row"><strong>SMS<br><span>Usado quando a concentracao atingir nivel critico.</span></strong><input type="checkbox"></label>
+              </div>
+            </div>
+            <div class="settings-pane" id="settings-rede">
+              <div class="form-grid">
+                <div class="form-field"><label>Servidor MQTT</label><input class="input" value="mqtt.aeris.local"></div>
+                <div class="form-field"><label>Porta</label><input class="input" type="number" value="8883"></div>
+                <div class="form-field"><label>Wi-Fi SSID</label><input class="input" value="Aeris-Home"></div>
+                <div class="form-field"><label>Usuario</label><input class="input" value="aeris_guard"></div>
+                <div class="form-field full"><label>Senha</label><input class="input" type="password" value="************"></div>
+              </div>
+            </div>
+            <div class="settings-pane" id="settings-seguranca">
+              <div class="form-grid">
+                <div class="form-field"><label>Senha atual</label><input class="input" type="password"></div>
+                <div class="form-field"><label>Nova senha</label><input class="input" type="password"></div>
+                <label class="switch-row full"><strong>Autenticacao em dois fatores<br><span>Solicitar codigo ao acessar configuracoes criticas.</span></strong><input type="checkbox" checked></label>
+                <label class="switch-row full"><strong>Logs de auditoria<br><span>Registrar alteracoes de limite, firmware e rede.</span></strong><input type="checkbox" checked></label>
+              </div>
+            </div>
+            <div class="settings-pane" id="settings-sistema">
+              <div class="status-meta">
+                <div class="meta-tile"><span>Versao</span><strong>1.0.0</strong></div>
+                <div class="meta-tile"><span>Atualizacoes</span><strong>Disponivel: 1.0.1</strong></div>
+                <div class="meta-tile"><span>Backup</span><strong>Hoje 03:00</strong></div>
+                <div class="meta-tile"><span>Restauracao</span><strong>Pronta</strong></div>
+              </div>
+              <div class="toolbar" style="margin-top:16px;justify-content:flex-start"><button class="btn small">Executar backup</button><button class="btn small danger">Restaurar configuracoes</button></div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="view" id="view-suporte">
+        <div class="topbar">
+          <div class="title-block"><h1>Suporte ao Fabricante</h1><p>Abra chamados, envie anexos e converse com a equipe tecnica Aeris.</p></div>
+          <div class="toolbar"><button class="btn primary" type="button" id="openTicketButton">Abrir chamado</button></div>
+        </div>
+        <div class="support-layout">
+          <aside class="card pad">
+            <h2 class="card-title">Conversas</h2>
+            <div class="conversation-list" style="margin-top:16px">
+              <div class="conversation active"><strong>Chamado #AG-1042</strong><span>Falha intermitente no sensor da cozinha</span></div>
+              <div class="conversation"><strong>Garantia</strong><span>Solicitacao de revisao preventiva</span></div>
+              <div class="conversation"><strong>Duvidas</strong><span>Configuracao de WhatsApp</span></div>
+            </div>
+          </aside>
+          <article class="card chat-card">
+            <div class="chat-header"><div><h2 class="card-title">Atendimento tecnico</h2><p class="card-subtitle">Status: respondida</p></div><span class="pill live">Entregue</span></div>
+            <div class="chat-stream" id="chatStream">
+              <div class="message"><strong>Suporte Aeris</strong><p>Recebemos os logs do equipamento. A comunicacao MQTT esta estavel, mas o RSSI caiu no horario do alerta.</p><small>15:21 - Respondida</small></div>
+              <div class="message out"><strong>Voce</strong><p>Vou reposicionar o hub para reduzir interferencia. Segue foto da instalacao.</p><small>15:27 - Entregue</small></div>
+            </div>
+            <form class="chat-compose" id="chatForm">
+              <input class="input" id="chatMessage" placeholder="Digite uma mensagem" required>
+              <label class="btn small" for="supportFile">Anexar</label>
+              <input id="supportFile" type="file" hidden multiple>
+              <button class="btn primary" type="submit">Enviar</button>
+            </form>
+          </article>
+          <aside class="card pad support-side">
+            <h2 class="card-title">Dados do fabricante</h2>
+            <div class="contact-grid" style="margin-top:16px">
+              <div class="contact-card"><span>Telefone</span><strong>0800 700 1042</strong></div>
+              <div class="contact-card"><span>Email</span><strong>suporte@aerisguard.com</strong></div>
+              <div class="contact-card"><span>WhatsApp</span><strong>+55 11 97000-1042</strong></div>
+              <div class="contact-card"><span>Numero de serie</span><strong>AG-HUB-2026-01928</strong></div>
+              <div class="contact-card"><span>Firmware</span><strong>1.0.7</strong></div>
+            </div>
+            <form class="form-grid" id="ticketForm" style="margin-top:18px">
+              <div class="form-field full"><label>Categoria</label><select class="input"><option>Problema tecnico</option><option>Falha no sensor</option><option>Duvidas</option><option>Sugestao</option><option>Garantia</option></select></div>
+              <div class="form-field full"><label>Descricao</label><textarea class="input" placeholder="Descreva o chamado"></textarea></div>
+              <button class="btn primary" type="submit">Enviar chamado</button>
+            </form>
+          </aside>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal" id="sensorModal">
+    <article class="card pad modal-card">
+      <h2 class="card-title" id="sensorModalTitle">Cadastrar sensor</h2>
+      <form id="sensorForm" class="form-grid" style="margin-top:16px">
+        <input type="hidden" id="sensorIndex">
+        <div class="form-field"><label>Nome</label><input class="input" id="sensorName" required></div>
+        <div class="form-field"><label>Ambiente</label><input class="input" id="sensorRoom" required></div>
+        <div class="form-field"><label>ID</label><input class="input" id="sensorId" required></div>
+        <div class="form-field"><label>Status</label><select class="input" id="sensorStatus"><option value="online">Online</option><option value="offline">Offline</option></select></div>
+        <div class="modal-actions full">
+          <button class="btn" type="button" id="closeSensorModal">Cancelar</button>
+          <button class="btn primary" type="submit">Salvar sensor</button>
+        </div>
+      </form>
+    </article>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const thresholds = { safe: 50, alert: 150, critical: 250 };
+    const maxChartValue = 300;
+    const state = {
+      range: "today",
+      draggingChart: false,
+      page: 1,
+      perPage: 9,
+      sortKey: "time",
+      sortDir: "desc",
+      emergency: false,
+      readings: [],
+      yesterday: [],
+      history: [],
+      events: [],
+      sensors: [
+        { name: "Cozinha", room: "Cozinha", id: "AG-GLP-001", status: "online", ppm: 18, rssi: -48, latency: 17, firmware: "1.0.7", history: [] },
+        { name: "Lavanderia", room: "Lavanderia", id: "AG-GLP-002", status: "online", ppm: 5, rssi: -52, latency: 21, firmware: "1.0.7", history: [] },
+        { name: "Sala de Estar", room: "Sala", id: "AG-GLP-003", status: "online", ppm: 0, rssi: -55, latency: 16, firmware: "1.0.7", history: [] },
+        { name: "Garagem", room: "Garagem", id: "AG-GLP-004", status: "online", ppm: 12, rssi: -61, latency: 23, firmware: "1.0.7", history: [] }
+      ]
+    };
+
+    function pad(value) { return String(value).padStart(2, "0"); }
+    function nowLabel(date = new Date()) { return `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`; }
+    function dateLabel(date = new Date()) { return `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()}`; }
+    function randomBetween(min, max) { return min + Math.random() * (max - min); }
+
+    function statusFor(ppm) {
+      if (ppm >= thresholds.critical) return { key: "critico", label: "Emergencia", message: "Nivel critico de GLP", color: "var(--red)", icon: "E" };
+      if (ppm >= thresholds.alert) return { key: "alerta", label: "Alerta", message: "Possivel vazamento detectado", color: "var(--red)", icon: "A" };
+      if (ppm >= thresholds.safe) return { key: "aviso", label: "Atencao", message: "Concentracao acima do normal", color: "var(--yellow)", icon: "!" };
+      return { key: "normal", label: "Seguro", message: "Nenhum vazamento detectado", color: "var(--green)", icon: "G" };
+    }
+
+    function eventColor(level) {
+      return { normal: "var(--green)", aviso: "var(--yellow)", alerta: "var(--orange)", critico: "var(--red)" }[level] || "var(--blue)";
+    }
+
+    function generateSeries(count, base = 26, peak = false) {
+      const series = [];
+      for (let i = 0; i < count; i++) {
+        const wave = Math.sin(i / 7) * 10 + Math.cos(i / 13) * 7;
+        const bump = peak ? Math.exp(-Math.pow((i - count * .42) / 9, 2)) * 62 : Math.exp(-Math.pow((i - count * .5) / 12, 2)) * 36;
+        const value = Math.max(0, Math.round(base + wave + bump + randomBetween(-5, 5)));
+        series.push({ time: new Date(Date.now() - (count - i) * 15 * 60 * 1000), value });
+      }
+      return series;
+    }
+
+    function seedData() {
+      state.readings = generateSeries(96, 22, true);
+      state.yesterday = generateSeries(96, 18, false);
+      state.readings[state.readings.length - 1].value = 18;
+      state.sensors.forEach((sensor, sensorIndex) => {
+        sensor.history = Array.from({ length: 28 }, (_, index) => Math.max(0, Math.round(sensor.ppm + Math.sin(index / 3 + sensorIndex) * 7 + randomBetween(-4, 4))));
+      });
+      state.events = [
+        { time: new Date(Date.now() - 1000 * 30), level: "normal", title: "Sistema normalizado", description: "Concentracao de GLP voltou ao nivel seguro." },
+        { time: new Date(Date.now() - 1000 * 60 * 35), level: "aviso", title: "Atencao", description: "Concentracao acima do normal: 68 ppm." },
+        { time: new Date(Date.now() - 1000 * 60 * 64), level: "alerta", title: "Alerta de vazamento", description: "Pico de concentracao detectado: 152 ppm." },
+        { time: new Date(Date.now() - 1000 * 60 * 96), level: "normal", title: "Sensor Cozinha reconectado", description: "Sensor voltou a comunicacao." },
+        { time: new Date(Date.now() - 1000 * 60 * 126), level: "normal", title: "Sistema inicializado", description: "Todos os sensores operacionais." }
+      ];
+      state.history = [];
+      for (let i = 0; i < 84; i++) {
+        const sensor = state.sensors[i % state.sensors.length];
+        const ppm = Math.max(0, Math.round(sensor.ppm + Math.sin(i / 6) * 36 + randomBetween(-8, 8) + (i % 23 === 0 ? 95 : 0)));
+        const st = statusFor(ppm);
+        state.history.push({
+          time: new Date(Date.now() - i * 24 * 60 * 1000 / 10),
+          sensor: sensor.name,
+          ppm,
+          status: st.key,
+          event: st.key === "normal" ? "Concentracao normal" : st.key === "aviso" ? "Concentracao elevada" : st.key === "alerta" ? "Alerta de vazamento" : "Nivel critico",
+          details: `${sensor.room} registrou ${ppm} ppm`
+        });
+      }
+    }
+
+    function showToast(message) {
+      const toast = document.getElementById("toast");
+      toast.textContent = message;
+      toast.classList.add("show");
+      clearTimeout(showToast.timer);
+      showToast.timer = setTimeout(() => toast.classList.remove("show"), 2800);
+    }
+
+    function activateView(viewName, push = true) {
+      document.querySelectorAll(".view").forEach(view => view.classList.toggle("active", view.id === `view-${viewName}`));
+      document.querySelectorAll("[data-view-link]").forEach(link => link.classList.toggle("active", link.dataset.viewLink === viewName));
+      if (push) history.replaceState(null, "", `#${viewName}`);
+    }
+
+    function currentSeries() {
+      if (state.range === "yesterday") return state.yesterday;
+      if (state.range === "24h") return state.readings.slice(-96);
+      return state.readings;
+    }
+
+    function pointsForSeries(series, width = 920, height = 320) {
+      const left = 38, right = 16, top = 26, bottom = 284;
+      return series.map((point, index) => {
+        const x = left + (index / Math.max(1, series.length - 1)) * (width - left - right);
+        const y = bottom - (point.value / maxChartValue) * (bottom - top);
+        return { x, y, point };
+      });
+    }
+
+    function smoothPath(points) {
+      if (!points.length) return "";
+      let path = `M ${points[0].x.toFixed(1)} ${points[0].y.toFixed(1)}`;
+      for (let i = 1; i < points.length; i++) {
+        const prev = points[i - 1];
+        const current = points[i];
+        const cx = (prev.x + current.x) / 2;
+        path += ` Q ${prev.x.toFixed(1)} ${prev.y.toFixed(1)} ${cx.toFixed(1)} ${((prev.y + current.y) / 2).toFixed(1)}`;
+      }
+      const last = points[points.length - 1];
+      path += ` T ${last.x.toFixed(1)} ${last.y.toFixed(1)}`;
+      return path;
+    }
+
+    function renderChart() {
+      const series = currentSeries();
+      const points = pointsForSeries(series);
+      const linePath = smoothPath(points);
+      const last = points[points.length - 1];
+      const first = points[0];
+      document.getElementById("chartLinePath").setAttribute("d", linePath);
+      document.getElementById("chartAreaPath").setAttribute("d", `${linePath} L ${last.x.toFixed(1)} 284 L ${first.x.toFixed(1)} 284 Z`);
+
+      const grid = document.getElementById("chartGrid");
+      const yLevels = [0, 50, 100, 150, 200, 250, 300];
+      const xLevels = [0, .125, .25, .375, .5, .625, .75, .875, 1];
+      const yLine = value => 284 - (value / maxChartValue) * (284 - 26);
+      grid.innerHTML = [
+        ...yLevels.map(value => `<line x1="38" x2="904" y1="${yLine(value)}" y2="${yLine(value)}" stroke="rgba(245,247,250,.07)"/><text x="4" y="${yLine(value) + 4}" fill="#9aa8bd" font-size="12">${value}</text>`),
+        ...xLevels.map(value => `<line y1="26" y2="284" x1="${38 + value * (904 - 38)}" x2="${38 + value * (904 - 38)}" stroke="rgba(245,247,250,.045)"/>`),
+        `<line x1="38" x2="904" y1="${yLine(thresholds.safe)}" y2="${yLine(thresholds.safe)}" stroke="#34d871" stroke-dasharray="7 7"/><text x="48" y="${yLine(thresholds.safe) - 8}" fill="#34d871" font-size="12">Limite seguro 50 ppm</text>`,
+        `<line x1="38" x2="904" y1="${yLine(thresholds.alert)}" y2="${yLine(thresholds.alert)}" stroke="#ffc857" stroke-dasharray="7 7"/><text x="48" y="${yLine(thresholds.alert) - 8}" fill="#ffc857" font-size="12">Alerta 150 ppm</text>`,
+        `<line x1="38" x2="904" y1="${yLine(thresholds.critical)}" y2="${yLine(thresholds.critical)}" stroke="#ff5757" stroke-dasharray="7 7"/><text x="48" y="${yLine(thresholds.critical) - 8}" fill="#ff5757" font-size="12">Critico 250 ppm</text>`
+      ].join("");
+
+      document.getElementById("chartPoints").innerHTML = points.map((item, index) => index % 4 === 0 || index === points.length - 1 ? `<circle cx="${item.x}" cy="${item.y}" r="3" fill="#14d8c4"/>` : "").join("");
+
+      const values = series.map(item => item.value);
+      const min = Math.min(...values);
+      const max = Math.max(...values);
+      const avg = Math.round(values.reduce((sum, value) => sum + value, 0) / values.length);
+      const lastValue = values[values.length - 1];
+      document.getElementById("statMin").textContent = min;
+      document.getElementById("statAvg").textContent = avg;
+      document.getElementById("statMax").textContent = max;
+      document.getElementById("statLast").textContent = lastValue;
+      renderReportChart(series);
+    }
+
+    function renderGauge(ppm) {
+      const status = statusFor(ppm);
+      const root = document.getElementById("statusCard");
+      root.style.setProperty("--status-color", status.color);
+      document.getElementById("statusLabel").textContent = status.label;
+      document.getElementById("statusMessage").textContent = status.message;
+      document.getElementById("statusIcon").textContent = status.icon;
+      document.getElementById("currentPpm").textContent = ppm;
+      const angle = -55 + Math.min(1, ppm / 250) * 110;
+      document.getElementById("gaugeNeedle").setAttribute("transform", `rotate(${angle} 160 164)`);
+      document.getElementById("systemState").textContent = status.key === "normal" ? "Operacional" : status.label;
+    }
+
+    function sparkline(values) {
+      const width = 180, height = 44;
+      const max = Math.max(30, ...values);
+      const min = Math.min(0, ...values);
+      const points = values.map((value, index) => {
+        const x = (index / Math.max(1, values.length - 1)) * width;
+        const y = height - ((value - min) / Math.max(1, max - min)) * (height - 6) - 3;
+        return `${x.toFixed(1)},${y.toFixed(1)}`;
+      }).join(" ");
+      return `<svg class="sparkline" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none"><polyline points="${points}" fill="none" stroke="#14d8c4" stroke-width="2"/><polyline points="0,44 ${points} ${width},44" fill="rgba(20,216,196,.1)" stroke="none"/></svg>`;
+    }
+
+    function renderSensors() {
+      const online = state.sensors.filter(sensor => sensor.status === "online").length;
+      document.getElementById("onlineSensors").textContent = online;
+      document.getElementById("totalSensors").textContent = state.sensors.length;
+      document.getElementById("sensorProgress").style.width = `${(online / state.sensors.length) * 100}%`;
+      document.getElementById("sensorPageOnline").textContent = online;
+      document.getElementById("sensorPageOffline").textContent = state.sensors.length - online;
+      document.getElementById("latencyAvg").textContent = `${Math.round(state.sensors.reduce((sum, sensor) => sum + sensor.latency, 0) / state.sensors.length)} ms`;
+
+      document.getElementById("dashboardSensors").innerHTML = state.sensors.map((sensor, index) => `
+        <article class="sensor-card">
+          <header><h3>${sensor.name}</h3><button class="btn small" type="button" data-edit-sensor="${index}">...</button></header>
+          <div class="sensor-status ${sensor.status === "offline" ? "offline" : ""}"><i class="live-dot"></i>${sensor.status === "online" ? "Sensor Ativo" : "Sensor Offline"}</div>
+          <div class="sensor-reading"><strong>${sensor.ppm}</strong><span>ppm</span></div>
+          ${sparkline(sensor.history)}
+          <div class="sensor-status ${sensor.status === "offline" ? "offline" : ""}">${sensor.status === "online" ? "Online" : "Offline"}</div>
+        </article>
+      `).join("");
+
+      document.getElementById("sensorTableBody").innerHTML = state.sensors.map((sensor, index) => `
+        <tr>
+          <td><strong>${sensor.name}</strong></td>
+          <td>${sensor.room}</td>
+          <td><span style="font-family:var(--font-mono)">${sensor.id}</span></td>
+          <td><span class="status-chip ${sensor.status === "offline" ? "offline" : ""}">${sensor.status === "online" ? "Online" : "Offline"}</span></td>
+          <td>${sensor.ppm} ppm</td>
+          <td><div class="row-actions"><button class="btn small" data-edit-sensor="${index}">Editar</button><button class="btn small" data-test-sensor="${index}">Testar</button><button class="btn small" data-history-sensor="${index}">Historico</button><button class="btn small danger" data-delete-sensor="${index}">Excluir</button></div></td>
+        </tr>
+      `).join("");
+    }
+
+    function renderTimeline() {
+      document.getElementById("eventTimeline").innerHTML = state.events.slice(0, 7).map(event => `
+        <div class="event" style="--event-color:${eventColor(event.level)}">
+          <time>${nowLabel(event.time)}</time>
+          <div><strong>${event.title}</strong><span>${event.description}</span></div>
+        </div>
+      `).join("");
+      document.getElementById("criticalEvents").innerHTML = state.events
+        .filter(event => event.level === "alerta" || event.level === "critico")
+        .slice(0, 5)
+        .map(event => `<div class="critical-item"><strong>${event.title}</strong><span>${nowLabel(event.time)} - ${event.description}</span></div>`)
+        .join("") || `<div class="critical-item"><strong>Nenhum evento critico ativo</strong><span>Sistema operando em nivel seguro.</span></div>`;
+    }
+
+    function renderHistoryFilters() {
+      const select = document.getElementById("filterSensor");
+      select.innerHTML = `<option value="">Todos os sensores</option>` + state.sensors.map(sensor => `<option>${sensor.name}</option>`).join("");
+    }
+
+    function filteredHistory() {
+      const search = document.getElementById("filterSearch").value.toLowerCase();
+      const sensor = document.getElementById("filterSensor").value;
+      const status = document.getElementById("filterStatus").value;
+      const min = Number(document.getElementById("filterMin").value || -1);
+      const max = Number(document.getElementById("filterMax").value || 9999);
+      const period = document.getElementById("filterPeriod").value;
+      return state.history
+        .filter(row => !search || `${row.sensor} ${row.event} ${row.details}`.toLowerCase().includes(search))
+        .filter(row => !sensor || row.sensor === sensor)
+        .filter(row => !status || row.status === status)
+        .filter(row => row.ppm >= min && row.ppm <= max)
+        .filter(row => !period || row.time.toISOString().slice(0, 10) === period)
+        .sort((a, b) => {
+          const av = state.sortKey === "time" ? a.time.getTime() : a[state.sortKey];
+          const bv = state.sortKey === "time" ? b.time.getTime() : b[state.sortKey];
+          return state.sortDir === "asc" ? (av > bv ? 1 : -1) : (av < bv ? 1 : -1);
+        });
+    }
+
+    function renderHistory() {
+      const rows = filteredHistory();
+      const totalPages = Math.max(1, Math.ceil(rows.length / state.perPage));
+      state.page = Math.min(state.page, totalPages);
+      const pageRows = rows.slice((state.page - 1) * state.perPage, state.page * state.perPage);
+      document.getElementById("historyTableBody").innerHTML = pageRows.map(row => `
+        <tr>
+          <td>${dateLabel(row.time)} ${nowLabel(row.time)}</td>
+          <td>${row.sensor}</td>
+          <td><strong>${row.ppm} ppm</strong></td>
+          <td><span class="status-chip ${row.status === "normal" ? "" : row.status === "aviso" ? "warning" : "critical"}">${row.status}</span></td>
+          <td>${row.event}</td>
+          <td>${row.details}</td>
+        </tr>
+      `).join("");
+      document.getElementById("historyCount").textContent = `${rows.length} registros`;
+      document.getElementById("pageInfo").textContent = `${state.page}/${totalPages}`;
+      document.getElementById("prevPage").disabled = state.page <= 1;
+      document.getElementById("nextPage").disabled = state.page >= totalPages;
+    }
+
+    function renderReportChart(series) {
+      const svg = document.getElementById("reportChart");
+      if (!svg) return;
+      const points = pointsForSeries(series.slice(-36), 680, 260).map(item => ({ x: item.x / 920 * 680, y: item.y / 320 * 260, value: item.point.value }));
+      const path = smoothPath(points);
+      svg.innerHTML = `
+        <defs><linearGradient id="reportGradient" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#4e8dff" stop-opacity=".32"/><stop offset="100%" stop-color="#4e8dff" stop-opacity="0"/></linearGradient></defs>
+        <path d="${path} L ${points[points.length - 1].x} 238 L ${points[0].x} 238 Z" fill="url(#reportGradient)"></path>
+        <path d="${path}" fill="none" stroke="#4e8dff" stroke-width="3" stroke-linecap="round"></path>
+      `;
+      const values = series.map(item => item.value);
+      document.getElementById("reportMin").textContent = `${Math.min(...values)} ppm`;
+      document.getElementById("reportMax").textContent = `${Math.max(...values)} ppm`;
+      document.getElementById("reportAvg").textContent = `${Math.round(values.reduce((sum, value) => sum + value, 0) / values.length)} ppm`;
+      document.getElementById("reportAlerts").textContent = String(values.filter(value => value >= thresholds.alert).length);
+    }
+
+    function updateDashboard() {
+      const lastReading = state.readings[state.readings.length - 1];
+      const responsible = state.sensors.reduce((max, sensor) => sensor.ppm > max.ppm ? sensor : max, state.sensors[0]);
+      renderGauge(lastReading.value);
+      document.getElementById("lastReadingTime").textContent = nowLabel(lastReading.time);
+      document.getElementById("lastReadingDate").textContent = dateLabel(lastReading.time);
+      document.getElementById("responsibleSensor").textContent = responsible.name;
+      document.getElementById("lastUpdateClock").textContent = nowLabel(new Date());
+      renderChart();
+      renderSensors();
+      renderTimeline();
+      renderHistory();
+    }
+
+    function addEvent(level, title, description) {
+      state.events.unshift({ time: new Date(), level, title, description });
+      if (state.events.length > 30) state.events.pop();
+      state.history.unshift({ time: new Date(), sensor: "Sistema", ppm: state.readings[state.readings.length - 1].value, status: level, event: title, details: description });
+    }
+
+    function tick() {
+      const mainSensor = state.sensors[0];
+      if (!state.emergency) {
+        mainSensor.ppm = Math.max(0, Math.round(mainSensor.ppm + randomBetween(-4, 5)));
+        if (Math.random() > .88) mainSensor.ppm += Math.round(randomBetween(8, 22));
+        mainSensor.ppm = Math.min(mainSensor.ppm, 96);
+      }
+      state.sensors.forEach((sensor, index) => {
+        if (sensor.status === "offline") return;
+        if (index !== 0 && !state.emergency) sensor.ppm = Math.max(0, Math.round(sensor.ppm + randomBetween(-3, 4)));
+        sensor.history.push(sensor.ppm);
+        sensor.history = sensor.history.slice(-28);
+      });
+      const ppm = Math.max(...state.sensors.filter(sensor => sensor.status === "online").map(sensor => sensor.ppm));
+      const st = statusFor(ppm);
+      state.readings.push({ time: new Date(), value: ppm });
+      state.readings = state.readings.slice(-96);
+      if (ppm >= thresholds.safe && Math.random() > .55) addEvent(st.key, st.key === "aviso" ? "Concentracao elevada" : "Alerta de vazamento", `${ppm} ppm detectados pelo sensor ${mainSensor.name}.`);
+      updateDashboard();
+    }
+
+    function simulateLeak() {
+      state.emergency = true;
+      state.sensors[0].ppm = 186;
+      state.sensors[0].history.push(186);
+      state.readings.push({ time: new Date(), value: 186 });
+      addEvent("alerta", "Alerta de vazamento", "Concentracao elevada detectada na cozinha. Valvula de seguranca fechada automaticamente.");
+      showToast("Vazamento simulado: valvula fechada e alertas enviados.");
+      updateDashboard();
+    }
+
+    function resetSimulation() {
+      state.emergency = false;
+      state.sensors[0].ppm = 18;
+      state.readings.push({ time: new Date(), value: 18 });
+      addEvent("normal", "Sistema normalizado", "Concentracao de GLP voltou ao nivel seguro.");
+      showToast("Sistema normalizado.");
+      updateDashboard();
+    }
+
+    function openSensorModal(index = "") {
+      const modal = document.getElementById("sensorModal");
+      document.getElementById("sensorIndex").value = index;
+      document.getElementById("sensorModalTitle").textContent = index === "" ? "Cadastrar sensor" : "Editar sensor";
+      const sensor = state.sensors[index] || { name: "", room: "", id: `AG-GLP-${String(state.sensors.length + 1).padStart(3, "0")}`, status: "online" };
+      document.getElementById("sensorName").value = sensor.name;
+      document.getElementById("sensorRoom").value = sensor.room;
+      document.getElementById("sensorId").value = sensor.id;
+      document.getElementById("sensorStatus").value = sensor.status;
+      modal.classList.add("open");
+    }
+
+    function saveSensor(event) {
+      event.preventDefault();
+      const index = document.getElementById("sensorIndex").value;
+      const sensor = {
+        name: document.getElementById("sensorName").value.trim(),
+        room: document.getElementById("sensorRoom").value.trim(),
+        id: document.getElementById("sensorId").value.trim(),
+        status: document.getElementById("sensorStatus").value,
+        ppm: index === "" ? 0 : state.sensors[index].ppm,
+        rssi: index === "" ? -54 : state.sensors[index].rssi,
+        latency: index === "" ? 22 : state.sensors[index].latency,
+        firmware: index === "" ? "1.0.7" : state.sensors[index].firmware,
+        history: index === "" ? Array(28).fill(0) : state.sensors[index].history
+      };
+      if (index === "") state.sensors.push(sensor);
+      else state.sensors[index] = sensor;
+      document.getElementById("sensorModal").classList.remove("open");
+      renderSensors();
+      renderHistoryFilters();
+      showToast("Sensor salvo com sucesso.");
+    }
+
+    function exportCsv() {
+      const rows = filteredHistory();
+      const csv = ["data_hora,sensor,ppm,status,evento,detalhes"].concat(rows.map(row => `"${dateLabel(row.time)} ${nowLabel(row.time)}","${row.sensor}",${row.ppm},"${row.status}","${row.event}","${row.details}"`)).join("\n");
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "aeris-guard-historico.csv";
+      link.click();
+      URL.revokeObjectURL(link.href);
+      showToast("CSV exportado.");
+    }
+
+    function bindEvents() {
+      document.querySelectorAll("[data-view-link]").forEach(link => {
+        link.addEventListener("click", event => {
+          event.preventDefault();
+          activateView(link.dataset.viewLink);
+        });
+      });
+      document.querySelectorAll("[data-range]").forEach(button => {
+        button.addEventListener("click", () => {
+          state.range = button.dataset.range;
+          document.querySelectorAll("[data-range]").forEach(item => item.classList.toggle("active-range", item === button));
+          renderChart();
+        });
+      });
+      document.getElementById("simulateLeak").addEventListener("click", simulateLeak);
+      document.getElementById("resetSimulation").addEventListener("click", resetSimulation);
+      document.getElementById("newSensorButton").addEventListener("click", () => openSensorModal(""));
+      document.getElementById("closeSensorModal").addEventListener("click", () => document.getElementById("sensorModal").classList.remove("open"));
+      document.getElementById("sensorForm").addEventListener("submit", saveSensor);
+      document.getElementById("firmwareAllButton").addEventListener("click", () => showToast("Atualizacao de firmware iniciada para sensores online."));
+      document.getElementById("exportCsv").addEventListener("click", exportCsv);
+      document.getElementById("exportExcel").addEventListener("click", () => { exportCsv(); showToast("Arquivo compativel com Excel exportado."); });
+      document.getElementById("exportPdf").addEventListener("click", () => showToast("Exportacao PDF simulada."));
+      document.getElementById("prevPage").addEventListener("click", () => { state.page--; renderHistory(); });
+      document.getElementById("nextPage").addEventListener("click", () => { state.page++; renderHistory(); });
+      ["filterSearch", "filterSensor", "filterStatus", "filterMin", "filterMax", "filterPeriod"].forEach(id => document.getElementById(id).addEventListener("input", () => { state.page = 1; renderHistory(); }));
+      document.querySelectorAll("th[data-sort]").forEach(th => th.addEventListener("click", () => {
+        const key = th.dataset.sort;
+        state.sortDir = state.sortKey === key && state.sortDir === "desc" ? "asc" : "desc";
+        state.sortKey = key;
+        renderHistory();
+      }));
+      document.querySelectorAll("[data-settings-tab]").forEach(tab => tab.addEventListener("click", () => {
+        document.querySelectorAll("[data-settings-tab]").forEach(item => item.classList.toggle("active", item === tab));
+        document.querySelectorAll(".settings-pane").forEach(pane => pane.classList.toggle("active", pane.id === `settings-${tab.dataset.settingsTab}`));
+      }));
+      document.getElementById("saveSettings").addEventListener("click", () => showToast("Configuracoes salvas."));
+      document.getElementById("generateReport").addEventListener("click", () => {
+        document.getElementById("reportPeriodLabel").textContent = document.getElementById("reportType").value;
+        showToast("Relatorio atualizado.");
+      });
+      document.querySelectorAll("[data-export-report]").forEach(button => button.addEventListener("click", () => showToast(`Relatorio ${button.dataset.exportReport} exportado.`)));
+      document.getElementById("openTicketButton").addEventListener("click", () => activateView("suporte"));
+      document.getElementById("ticketForm").addEventListener("submit", event => {
+        event.preventDefault();
+        showToast("Chamado aberto com sucesso.");
+      });
+      document.getElementById("chatForm").addEventListener("submit", event => {
+        event.preventDefault();
+        const input = document.getElementById("chatMessage");
+        const stream = document.getElementById("chatStream");
+        stream.insertAdjacentHTML("beforeend", `<div class="message out"><strong>Voce</strong><p>${input.value}</p><small>${nowLabel()} - Enviada</small></div>`);
+        input.value = "";
+        stream.scrollTop = stream.scrollHeight;
+        showToast("Mensagem enviada.");
+      });
+      document.body.addEventListener("click", event => {
+        const edit = event.target.closest("[data-edit-sensor]");
+        const test = event.target.closest("[data-test-sensor]");
+        const hist = event.target.closest("[data-history-sensor]");
+        const del = event.target.closest("[data-delete-sensor]");
+        if (edit) openSensorModal(Number(edit.dataset.editSensor));
+        if (test) showToast(`Comunicacao testada: ${state.sensors[test.dataset.testSensor].latency} ms.`);
+        if (hist) { document.getElementById("filterSensor").value = state.sensors[hist.dataset.historySensor].name; activateView("historico"); renderHistory(); }
+        if (del) {
+          state.sensors.splice(Number(del.dataset.deleteSensor), 1);
+          renderSensors();
+          renderHistoryFilters();
+          showToast("Sensor excluido.");
+        }
+      });
+
+      const shell = document.getElementById("chartShell");
+      shell.addEventListener("mousemove", event => {
+        const rect = shell.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const series = currentSeries();
+        const index = Math.max(0, Math.min(series.length - 1, Math.round((x / rect.width) * (series.length - 1))));
+        const item = pointsForSeries(series)[index];
+        document.getElementById("hoverLine").setAttribute("x1", item.x);
+        document.getElementById("hoverLine").setAttribute("x2", item.x);
+        document.getElementById("hoverLine").setAttribute("opacity", "1");
+        document.getElementById("hoverDot").setAttribute("cx", item.x);
+        document.getElementById("hoverDot").setAttribute("cy", item.y);
+        document.getElementById("hoverDot").setAttribute("opacity", "1");
+        const tooltip = document.getElementById("chartTooltip");
+        tooltip.innerHTML = `<span>${nowLabel(item.point.time)}</span><strong>${item.point.value} ppm</strong>`;
+        tooltip.style.left = `${(item.x / 920) * rect.width}px`;
+        tooltip.style.top = `${(item.y / 320) * rect.height}px`;
+        tooltip.classList.add("show");
+      });
+      shell.addEventListener("mouseleave", () => {
+        document.getElementById("hoverLine").setAttribute("opacity", "0");
+        document.getElementById("hoverDot").setAttribute("opacity", "0");
+        document.getElementById("chartTooltip").classList.remove("show");
+      });
+      shell.addEventListener("wheel", event => {
+        event.preventDefault();
+        showToast(event.deltaY < 0 ? "Zoom aplicado ao grafico." : "Zoom reduzido.");
+      }, { passive: false });
+      shell.addEventListener("pointerdown", () => { state.draggingChart = true; shell.style.cursor = "grabbing"; });
+      shell.addEventListener("pointerup", () => { if (state.draggingChart) showToast("Pan do grafico aplicado."); state.draggingChart = false; shell.style.cursor = "crosshair"; });
+      shell.addEventListener("pointerleave", () => { state.draggingChart = false; shell.style.cursor = "crosshair"; });
+    }
+
+    seedData();
+    bindEvents();
+    renderHistoryFilters();
+    updateDashboard();
+    activateView(location.hash.replace("#", "") || "dashboard", false);
+    setInterval(tick, 4200);
+  </script>
+</body>
+</html>
