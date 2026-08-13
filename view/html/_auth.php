@@ -23,6 +23,17 @@ function escapeHtml($value) {
     return htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
 }
 
+function avatarPath($currentUser) {
+    if ($currentUser && $currentUser->getavatar()) {
+        $filename = basename($currentUser->getavatar());
+        $filePath = __DIR__ . '/../../uploads/avatars/' . $filename;
+        if (is_file($filePath)) {
+            return '../../uploads/avatars/' . $filename;
+        }
+    }
+    return null;
+}
+
 function userInitials($name) {
     $parts = preg_split('/\s+/', trim($name));
     if (!$parts || trim($name) === '') {
@@ -36,15 +47,4 @@ function userInitials($name) {
         $initials .= $substr($last, 0, 1);
     }
     return $toupper($initials);
-}
-
-function avatarPath($currentUser) {
-    if ($currentUser->getavatar()) {
-        $filename = basename($currentUser->getavatar());
-        $filePath = __DIR__ . '/../../uploads/avatars/' . $filename;
-        if (is_file($filePath)) {
-            return '../../uploads/avatars/' . $filename;
-        }
-    }
-    return null;
 }
