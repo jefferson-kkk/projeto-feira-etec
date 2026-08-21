@@ -11,9 +11,9 @@ class Connection{
         if(!self::$instance){
             try{
                 $host = 'localhost';
-                $dbname = 'login';
+                $dbname = 'aeris';
                 $username = 'root';
-                $password = 'senaisp';
+                $password = ''; // XAMPP padrão sem senha
 
                 $dsn = "mysql:host=$host;charset=utf8mb4";
                 self::$instance = new PDO($dsn, $username, $password);

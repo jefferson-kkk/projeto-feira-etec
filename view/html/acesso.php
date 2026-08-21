@@ -14,7 +14,7 @@ $controller = new LoginController();
 $erro = '';
 
 if (!empty($_SESSION['user_id'])) {
-    header('Location: ' . $dashboardPage);
+    header('Location: home.php');
     exit;
 }
 
@@ -55,7 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['user_id'] = $usuario->getid();
             $_SESSION['usuario'] = $usuario->getnome();
             $controller->atualizarUltimoLogin($usuario->getid());
-            header('Location: ' . $dashboardPage);
+            header('Location: home.php');
             exit;
         }
 
@@ -75,7 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['user_id'] = $novoUsuario->getid();
             $_SESSION['usuario'] = $novoUsuario->getnome();
             $controller->atualizarUltimoLogin($novoUsuario->getid());
-            header('Location: ' . $dashboardPage);
+            header('Location: home.php');
             exit;
         } catch (Exception $e) {
             $erro = 'Erro ao cadastrar: ' . $e->getMessage();
