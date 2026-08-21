@@ -1,6 +1,7 @@
 <?php
 
-class Project {
+class Project
+{
     private $id;
     private $userId;
     private $name;
@@ -11,8 +12,25 @@ class Project {
     private $wifiStatus;
     private $esp32Id;
     private $lastOnline;
+    private $location;
+    private $description;
+    private $apiKey;
 
-    public function __construct($id, $userId, $name, $manufacturerCode, $registeredAt, $status, $firmwareVersion, $wifiStatus, $esp32Id, $lastOnline) {
+    public function __construct(
+        $id = null,
+        $userId = null,
+        $name = '',
+        $manufacturerCode = '',
+        $registeredAt = null,
+        $status = 'offline',
+        $firmwareVersion = null,
+        $wifiStatus = null,
+        $esp32Id = null,
+        $lastOnline = null,
+        $location = null,
+        $description = null,
+        $apiKey = null
+    ) {
         $this->id = $id;
         $this->userId = $userId;
         $this->name = $name;
@@ -23,6 +41,9 @@ class Project {
         $this->wifiStatus = $wifiStatus;
         $this->esp32Id = $esp32Id;
         $this->lastOnline = $lastOnline;
+        $this->location = $location;
+        $this->description = $description;
+        $this->apiKey = $apiKey;
     }
 
     public function getId() { return $this->id; }
@@ -35,4 +56,7 @@ class Project {
     public function getWifiStatus() { return $this->wifiStatus; }
     public function getEsp32Id() { return $this->esp32Id; }
     public function getLastOnline() { return $this->lastOnline; }
+    public function getLocation() { return $this->location; }
+    public function getDescription() { return $this->description; }
+    public function getApiKey() { return $this->apiKey; }
 }

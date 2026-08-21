@@ -3,11 +3,15 @@ require_once __DIR__ . '/../../Controller/Controller.php';
 
 session_start();
 
-$redirectDir = rtrim(dirname($_SERVER['PHP_SELF']), '/');
-if ($redirectDir === '') {
-    $redirectDir = '/';
+$dashboardPage = '/home.php';
+
+if (!empty($_SESSION['user_id'])) {
+    header('Location: ' . $dashboardPage);
+    exit;
 }
-$dashboardPage = $redirectDir . '/home.php';
+
+$controller = new LoginController();
+$erro = '';
 
 if (!empty($_SESSION['user_id'])) {
     header('Location: ' . $dashboardPage);

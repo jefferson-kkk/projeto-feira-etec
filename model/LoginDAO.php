@@ -108,7 +108,7 @@ class LoginDAO {
         }
 
         $stmt = $this->conn->prepare($sql);
-        $stmt->execute($params);
+        $stmt->execute($params);    
         return (int) $stmt->fetchColumn() > 0;
     }
 
@@ -125,45 +125,48 @@ class LoginDAO {
         return $candidate;
     }
 
-    public function criarLogin(Login $login) {
-        $login->setusername($this->uniqueUsername($login->getusername()));
-        $stmt = $this->conn->prepare(
-            "INSERT INTO login(
-                nome, senha, email, username, display_name, avatar, phone, biography,
-                language, timezone, last_login, email_verified,
-                notify_email, notify_security, notify_system, notify_project, notify_alerts,
-                datacriacao, created_at, updated_at
-            ) VALUES (
-                :nome, :senha, :email, :username, :display_name, :avatar, :phone, :biography,
-                :language, :timezone, :last_login, :email_verified,
-                :notify_email, :notify_security, :notify_system, :notify_project, :notify_alerts,
-                :datacriacao, :created_at, :updated_at
-            )"
-        );
+ public function criarLogin(Login $login) {
+    $login->setusername($this->uniqueUsername($login->getusername()));
 
-        $stmt->execute([
-            ':nome' => $login->getnome(),
-            ':senha' => $login->getsenha(),
-            ':email' => $login->getemail(),
-            ':username' => $login->getusername(),
-            ':display_name' => $login->getdisplayName(),
-            ':avatar' => $login->getavatar(),
-            ':phone' => $login->getphone(),
-            ':biography' => $login->getbiography(),
-            ':language' => $login->getlanguage(),
-            ':timezone' => $login->gettimezone(),
-            ':last_login' => $login->getLastLogin(),
-            ':email_verified' => $login->getemailVerified(),
-            ':notify_email' => $login->getnotifyEmail(),
-            ':notify_security' => $login->getnotifySecurity(),
-            ':notify_system' => $login->getnotifySystem(),
-            ':notify_project' => $login->getnotifyProject(),
-            ':notify_alerts' => $login->getnotifyAlerts(),
-            ':datacriacao' => $login->getdatacriacao(),
-            ':created_at' => $login->getcreatedAt(),
-            ':updated_at' => $login->getupdatedAt()
-        ]);
-    }
+    $stmt = $this->conn->prepare(
+        "INSERT INTO login(
+            nome, senha, email, username, display_name, avatar, phone, biography,
+            language, timezone, last_login, email_verified,
+            notify_email, notify_security, notify_system, notify_project, notify_alerts,
+            datacriacao, created_at, updated_at
+        ) VALUES (
+            :nome, :senha, :email, :username, :display_name, :avatar, :phone, :biography,
+            :language, :timezone, :last_login, :email_verified,
+            :notify_email, :notify_security, :notify_system, :notify_project, :notify_alerts,
+            :datacriacao, :created_at, :updated_at
+        )"
+    );
+
+    $stmt->execute([
+        ':nome' => $login->getnome(),
+        ':senha' => $login->getsenha(),
+        ':email' => $login->getemail(),
+        ':username' => $login->getusername(),
+        ':display_name' => $login->getdisplayName(),
+        ':avatar' => $login->getavatar(),
+        ':phone' => $login->getphone(),
+        ':biography' => $login->getbiography(),
+        ':language' => $login->getlanguage() ?: 'en',
+        ':timezone' => $login->gettimezone() ?: 'UTC',
+        ':last_login' => $login->getLastLogin(),
+
+        ':email_verified' => 0,
+        ':notify_email' => 1,
+        ':notify_security' => 1,
+        ':notify_system' => 1,
+        ':notify_project' => 1,
+        ':notify_alerts' => 1,
+
+        ':datacriacao' => $login->getdatacriacao(),
+        ':created_at' => date('Y-m-d H:i:s'),
+        ':updated_at' => date('Y-m-d H:i:s')
+    ]);
+}
 
     public function lerLogin() {
         $stmt = $this->conn->query("SELECT * FROM login ORDER BY nome");
