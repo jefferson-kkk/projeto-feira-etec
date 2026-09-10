@@ -20,6 +20,11 @@
       --normal:#21df69;
       --attention:#ffd21a;
       --danger:#ff4141;
+      --surface:rgba(7,12,15,.35);
+      --surface-strong:#0b1115;
+      --line:rgba(255,255,255,.055);
+      --chart-grid:rgba(255,255,255,.055);
+      --chart-label:#69747c;
       --font:'Inter',system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
       --ease:.28s ease;
     }
@@ -164,15 +169,15 @@
     }
     .projeto-section{padding:20px 0 28px}
     .grid-projeto{
-      display:grid;grid-template-columns:205px minmax(0,1fr);gap:25px;align-items:stretch
+      display:grid;grid-template-columns:minmax(230px,.68fr) minmax(0,1.32fr);gap:25px;align-items:stretch
     }
     .projeto-info{padding-top:6px}
     .projeto-info h2{
-      font-size:20px;line-height:1.22;letter-spacing:-.3px;margin-bottom:10px
+      font-size:clamp(20px,2vw,28px);line-height:1.22;letter-spacing:-.3px;margin-bottom:10px
     }
-    .projeto-info p{color:#8d969d;font-size:9px;line-height:1.6}
+    .projeto-info p{color:#8d969d;font-size:clamp(11px,1vw,14px);line-height:1.65;max-width:430px}
 
-    /* CARROSSEL 3D DOS COMPONENTES */
+    /* CARROSSEL DE COMPONENTE EM DESTAQUE */
     .componentes-container{
       position:relative;
       border:0;
@@ -192,48 +197,32 @@
       pointer-events:none;z-index:3;
     }
     .componentes-container .tag{margin:0 12px 2px;position:relative;z-index:5}
-    .componentes-carousel{
-      position:relative;height:402px;
-      perspective:1100px;
-      display:flex;align-items:center;justify-content:center;
-    }
+    .componentes-carousel{position:relative;height:402px;display:flex;align-items:center}
     .componentes-grid{
-      position:relative;width:100%;height:100%;
-      overflow:visible;transform-style:preserve-3d;
-      -webkit-mask-image:linear-gradient(90deg,transparent,black 11%,black 89%,transparent);
-      mask-image:linear-gradient(90deg,transparent,black 11%,black 89%,transparent);
+      position:relative;width:100%;height:100%;overflow:hidden;
     }
     .card-componente{
-      position:absolute;top:50%;left:50%;
-      width:260px;height:255px;margin-left:-130px;
-      text-align:center;padding:12px;
-      transform:
-        translateY(-50%)
-        translateX(calc(var(--offset) * 190px))
-        translateZ(calc(var(--depth) * 1px))
-        rotateY(calc(var(--rotate) * 1deg))
-        scale(var(--scale));
-      opacity:var(--opacity);
-      filter:none;
-      z-index:var(--z);
-      transition:
-        transform .72s cubic-bezier(.22,.61,.36,1),
-        opacity .55s ease,filter .55s ease,box-shadow .55s ease;
-      animation:card-componente-entrada .7s ease both;
-      pointer-events:var(--pointer);
-      will-change:transform,opacity,filter;
+      position:absolute;inset:0;display:grid;grid-template-columns:minmax(0,1.15fr) minmax(260px,.85fr);
+      align-items:center;gap:clamp(20px,4vw,70px);padding:20px 58px;
+      text-align:left;opacity:0;visibility:hidden;transform:translateX(28px);
+      transition:opacity .45s ease,transform .55s cubic-bezier(.22,.61,.36,1),visibility .55s;
+      pointer-events:none;
+    }
+    .card-componente.is-active{
+      opacity:1;visibility:visible;transform:translateX(0);pointer-events:auto;z-index:2;
     }
     .card-componente.is-center{
-      filter:drop-shadow(0 0 18px rgba(32,217,87,.1));
+      filter:none;
     }
     .card-componente img{
-      width:115%;height:225px;margin-left:-7.5%;object-fit:contain;
+      width:100%;height:340px;object-fit:contain;
       filter:none;
       image-rendering:auto;
       margin-bottom:6px;
     }
-    .card-componente h4{font-size:10px;margin-bottom:5px}
-    .card-componente p{font-size:7.5px;line-height:1.42;color:#7f8990}
+    .card-info{min-width:0;align-self:center}
+    .card-componente h4{font-size:clamp(18px,2vw,28px);margin-bottom:12px;color:var(--text)}
+    .card-componente p{font-size:clamp(11px,1vw,14px);line-height:1.65;color:var(--muted);max-width:360px}
     .carousel-btn{
       position:absolute;top:50%;transform:translateY(-50%);
       width:31px;height:31px;border-radius:50%;
@@ -263,9 +252,33 @@
       width:17px;border-radius:5px;background:var(--green);
       box-shadow:0 0 8px rgba(32,217,87,.4)
     }
-    @keyframes card-componente-entrada{
-      from{opacity:0}
-      to{opacity:var(--opacity)}
+    .theme-toggle{margin-left:10px;padding:8px;border:1px solid var(--border);border-radius:50%;background:transparent;color:var(--text);cursor:pointer;display:grid;place-items:center;transition:var(--ease)}
+    .theme-toggle:hover{color:var(--green);border-color:var(--green)}
+    .theme-toggle i{width:16px;height:16px}
+    [data-theme="light"]{--bg:#eef3f1;--panel:#fff;--panel-2:#f5f8f7;--border:rgba(10,35,25,.15);--text:#13201b;--muted:#61706a;--surface:rgba(255,255,255,.72);--surface-strong:#fff;--line:rgba(10,35,25,.12);--chart-grid:rgba(10,35,25,.12);--chart-label:#60716a}
+    [data-theme="light"] body{background:radial-gradient(circle at 76% 24%,rgba(32,217,87,.12),transparent 24%),var(--bg)}
+    [data-theme="light"] .navbar{background:rgba(238,243,241,.9);border-color:rgba(10,35,25,.12)}
+    [data-theme="light"] .nav-links a{color:#42534c}
+    [data-theme="light"] .componentes-container{background:linear-gradient(180deg,#fff,#e9f1ed)}
+    [data-theme="light"] .componentes-container:before{background:linear-gradient(90deg,rgba(238,243,241,.8),transparent 18%,transparent 82%,rgba(238,243,241,.8))}
+    [data-theme="light"] .btn-secondary{color:var(--text);border-color:#9aa9a2}
+    [data-theme="light"] .projeto-section,[data-theme="light"] .tecnologias-section,[data-theme="light"] .monitoramento-section,[data-theme="light"] .aplicacoes-section{border-color:var(--line)}
+    [data-theme="light"] .feature-card,[data-theme="light"] .tech-card,[data-theme="light"] .card-aplicacao{background:var(--surface);border-color:var(--line)}
+    [data-theme="light"] .feature-card p,[data-theme="light"] .tech-card p,[data-theme="light"] .card-aplicacao p,[data-theme="light"] .monitoramento-info p,[data-theme="light"] .status-list li{color:var(--muted)}
+    [data-theme="light"] .grafico-card{background:linear-gradient(180deg,#fff,#f5f8f7);border-color:var(--line)}
+    [data-theme="light"] .grafico-header h3,[data-theme="light"] .status-list strong{color:var(--text)}
+    [data-theme="light"] .chart-tooltip{background:#fff;color:var(--text);border-color:var(--line)}
+    [data-theme="light"] .btn-simulacao{background:rgba(10,35,25,.04);color:#42534c;border-color:var(--line)}
+    @media(max-width:700px){
+      .card-componente{grid-template-columns:1fr;gap:4px;padding:12px 45px;text-align:center;align-content:center}
+      .card-componente img{height:235px}
+      .card-componente p{margin:auto}
+    }
+
+    @media(max-width:1100px){
+      .grid-projeto{grid-template-columns:1fr;gap:18px}
+      .projeto-info{max-width:720px}
+      .projeto-info p{max-width:680px}
     }
 
     /* TECHNOLOGIES */
@@ -413,6 +426,11 @@
       .card-componente{width:210px;height:220px;margin-left:-105px;padding:10px}
       .card-componente img{height:185px}
     }
+    @media(max-width:700px){
+      .card-componente{grid-template-columns:1fr;gap:4px;padding:12px 45px;text-align:center;align-content:center}
+      .card-componente img{width:100%;height:235px;margin-left:0}
+      .card-componente p{margin:auto}
+    }
   </style>
 </head>
 
@@ -434,6 +452,7 @@
       </nav>
 
       <a href="#contato" class="btn btn-outline">Fale Conosco <i data-lucide="arrow-right"></i></a>
+      <button class="theme-toggle" id="themeToggle" type="button" aria-label="Alternar tema" title="Alternar tema"><i data-lucide="sun"></i></button>
     </div>
   </header>
 
@@ -490,29 +509,23 @@
 
             <div class="componentes-grid" id="componentesGrid">
               <div class="card-componente">
-                <img src="../../img/esp32-real.png" alt="ESP32">
-                <h4>ESP32</h4>
-                <p>Microcontrolador responsável pelo processamento dos dados e comunicação.</p>
+                <img src="../../img/ChatGPT Image 10_09_2026, 15_04_07.png" alt="ESP32">
+                <div class="card-info"><h4>ESP32</h4><p>Microcontrolador dual-core com Wi-Fi e Bluetooth. Faz a leitura dos sensores, processa os níveis de gás e envia os dados ao sistema IoT.</p></div>
               </div>
               <div class="card-componente">
-                <img src="../../img/display-oled-real.png" alt="Display OLED">
-                <h4>DISPLAY OLED</h4>
-                <p>Exibe em tempo real os níveis de gás e o status do sistema.</p>
-              </div>
+                <img src="../../img/ChatGPT Image 10_09_2026, 15_06_42.png" alt="Display OLED">
+                <div class="card-info"><h4>DISPLAY OLED</h4><p>Módulo OLED I2C de baixo consumo. Exibe concentração, estado do monitoramento e alertas sem depender de um computador.</p></div>
               <div class="card-componente">
-                <img src="../../img/tgs2610-real.png" alt="TGS2610">
-                <h4>TGS2610</h4>
-                <p>Sensor de gases combustíveis e tóxicos com alta sensibilidade.</p>
+                <img src="../../img/ChatGPT Image 10_09_2026, 15_09_49.png" alt="TGS2610">
+                <div class="card-info"><h4>TGS2610</h4><p>Sensor semicondutor específico para gases combustíveis. Sua resistência varia conforme a concentração detectada, permitindo a medição pelo ESP32.</p></div>
               </div>
               <div class="card-componente">
                 <img src="../../img/buzzer-real.png" alt="Buzzer">
-                <h4>BUZZER</h4>
-                <p>Emite alertas sonoros quando os níveis atingem situações críticas.</p>
+                <div class="card-info"><h4>BUZZER</h4><p>Transdutor sonoro acionado por sinal elétrico. Emite o alerta audível quando o sistema identifica uma concentração perigosa.</p></div>
               </div>
               <div class="card-componente">
                 <img src="../../img/leds-real.png" alt="3 LEDs">
-                <h4>3 LEDs</h4>
-                <p>Indicam o estado do sistema: Normal, Atenção e Perigo.</p>
+                <div class="card-info"><h4>3 LEDs</h4><p>Indicadores visuais de diagnóstico: verde para operação normal, amarelo para atenção e vermelho para situação de perigo.</p></div>
               </div>
 
               <!-- Você pode adicionar mais componentes aqui sem alterar o JS. -->
@@ -645,6 +658,10 @@
       return 'NORMAL';
     }
 
+    function themeColor(name){
+      return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    }
+
     function drawChart(){
       const w = canvas.clientWidth;
       const h = canvas.clientHeight;
@@ -672,11 +689,11 @@
 
       // Grade e valores
       ctx.font = '7px Inter, Arial, sans-serif';
-      ctx.fillStyle = '#727d85';
+      ctx.fillStyle = themeColor('--muted');
       ctx.textAlign = 'right';
       [1000,750,500,250,0].forEach(v=>{
         const y = top + ph - (v/max)*ph;
-        ctx.strokeStyle = 'rgba(255,255,255,.055)';
+        ctx.strokeStyle = themeColor('--chart-grid');
         ctx.lineWidth = 1;
         ctx.beginPath();ctx.moveTo(left,y);ctx.lineTo(w-right,y);ctx.stroke();
         ctx.fillText(v,left-6,y+2.5);
@@ -687,7 +704,7 @@
       const labels=['00:00','04:00','08:00','12:00','16:00','20:00','24:00'];
       labels.forEach((lab,i)=>{
         const x=left+(i/(labels.length-1))*pw;
-        ctx.fillStyle='#69747c';
+        ctx.fillStyle=themeColor('--chart-label');
         ctx.fillText(lab,x,h-5);
       });
 
@@ -712,7 +729,7 @@
       // curva principal
       ctx.beginPath();
       points.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));
-      ctx.strokeStyle='#29df65';
+      ctx.strokeStyle=themeColor('--green');
       ctx.lineWidth=1.6;
       ctx.lineJoin='round';ctx.lineCap='round';
       ctx.stroke();
@@ -828,40 +845,10 @@
     }
 
     function renderComponentCarousel(){
-      const total=cards.length;
       cards.forEach((card,index)=>{
-        let raw=index-currentComponent;
-        if(raw>total/2) raw-=total;
-        if(raw<-total/2) raw+=total;
-
-        const abs=Math.abs(raw);
-        let offset=raw,depth=0,rotate=0,scale=1,opacity=1,blur='0px',z=20,pointer='none';
-
-        if(abs===0){
-          scale=1.08; depth=80; z=30; pointer='auto';
-          card.classList.add('is-center');
-        }else if(abs===1){
-          scale=.82; depth=-15; rotate=raw<0?38:-38;
-          opacity=.67; z=20;
-          card.classList.remove('is-center');
-        }else if(abs===2){
-          scale=.67; depth=-95; rotate=raw<0?58:-58;
-          opacity=.34; z=10;
-          card.classList.remove('is-center');
-        }else{
-          scale=.55; depth=-160; rotate=raw<0?70:-70;
-          opacity=0; z=1;
-          card.classList.remove('is-center');
-        }
-
-        card.style.setProperty('--offset',offset);
-        card.style.setProperty('--depth',depth);
-        card.style.setProperty('--rotate',rotate);
-        card.style.setProperty('--scale',scale);
-        card.style.setProperty('--opacity',opacity);
-        card.style.setProperty('--blur',blur);
-        card.style.setProperty('--z',z);
-        card.style.setProperty('--pointer',pointer);
+        const active=index===currentComponent;
+        card.classList.toggle('is-active',active);
+        card.classList.toggle('is-center',active);
       });
 
       dots.innerHTML='';
@@ -911,6 +898,23 @@
     });
 
     renderComponentCarousel();
+
+    const themeToggle=document.getElementById('themeToggle');
+    const savedTheme=localStorage.getItem('aeris-theme')||'dark';
+    document.documentElement.dataset.theme=savedTheme;
+    function updateThemeIcon(){
+      themeToggle.innerHTML=`<i data-lucide="${document.documentElement.dataset.theme==='dark'?'sun':'moon'}"></i>`;
+      themeToggle.setAttribute('aria-label',document.documentElement.dataset.theme==='dark'?'Ativar tema claro':'Ativar tema escuro');
+      lucide.createIcons();
+    }
+    themeToggle.addEventListener('click',()=>{
+      const theme=document.documentElement.dataset.theme==='dark'?'light':'dark';
+      document.documentElement.dataset.theme=theme;
+      localStorage.setItem('aeris-theme',theme);
+      updateThemeIcon();
+      resizeCanvas();
+    });
+    updateThemeIcon();
 
     /* Navbar ativa conforme a seção */
     const sections=[...document.querySelectorAll('main section[id]')];
