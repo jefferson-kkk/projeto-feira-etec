@@ -13,7 +13,7 @@ class Connection{
                 $host = 'localhost';
                 $dbname = 'aeris';
                 $username = 'root';
-                $password = ''; // XAMPP padrão sem senha
+                $password = getenv('AERIS_DB_PASSWORD') ?: 'senaisp';
 
                 $dsn = "mysql:host=$host;charset=utf8mb4";
                 self::$instance = new PDO($dsn, $username, $password);

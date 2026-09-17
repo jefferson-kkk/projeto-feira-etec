@@ -2,9 +2,9 @@
 
 header('Content-Type: application/json; charset=utf-8');
 
-require_once __DIR__ . '/../../model/Connection.php';
-require_once __DIR__ . '/../../model/DeviceDAO.php';
-require_once __DIR__ . '/../../model/ReadingDAO.php';
+require_once __DIR__ . '/../model/Connection.php';
+require_once __DIR__ . '/../model/DeviceDAO.php';
+require_once __DIR__ . '/../model/ReadingDAO.php';
 
 
 /**
@@ -64,7 +64,7 @@ if (!is_array($body)) {
  * }
  */
 $esp32Id = trim(
-    (string)($body['device_id'] ?? '')
+    (string)($body['device_id'] ?? $body['esp32_id'] ?? '')
 );
 
 

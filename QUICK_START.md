@@ -15,11 +15,23 @@ CREATE DATABASE IF NOT EXISTS `aeris` CHARACTER SET utf8mb4 COLLATE utf8mb4_gene
 
 ---
 
-## 2️⃣ Acessar (1 clique)
+## 2️⃣ Iniciar e acessar (servidor PHP local)
+
+No terminal, dentro da pasta do projeto, execute:
+
+```powershell
+php -S 0.0.0.0:8000 -t .
+```
+
+Mantenha esse terminal aberto e acesse:
 
 ```
-http://localhost/projeto-feira-etec/view/html/acesso.php
+http://127.0.0.1:8000/view/html/acesso.php
 ```
+
+Para o ESP32 acessar o computador, use no firmware `http://IP_DO_PC:8000/api/receive.php` e libere a porta 8000 no Firewall do Windows. O PC e o ESP32 devem estar na mesma rede.
+
+Não use `http://localhost/projeto-feira-etec/...` com o servidor PHP embutido; esse formato depende de Apache/XAMPP configurado.
 
 ---
 
@@ -68,7 +80,7 @@ projeto-feira-etec/
 
 ## ✅ Validação
 
-Acesse: `http://localhost/projeto-feira-etec/verificar_banco.php`
+Acesse: `http://127.0.0.1:8000/verificar_banco.php`
 
 Deve aparecer:
 - ✅ Conexão com MySQL estabelecida

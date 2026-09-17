@@ -8,7 +8,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
-require_once __DIR__ . '/../../model/Connection.php';
+require_once __DIR__ . '/../model/Connection.php';
 session_start();
 
 function out($status, $data)

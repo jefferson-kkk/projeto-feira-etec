@@ -2,9 +2,9 @@
 
 header('Content-Type: application/json; charset=utf-8');
 
-require_once __DIR__ . '/../../model/Connection.php';
-require_once __DIR__ . '/../../model/DeviceDAO.php';
-require_once __DIR__ . '/../../Controller/LocationController.php';
+require_once __DIR__ . '/../model/Connection.php';
+require_once __DIR__ . '/../model/DeviceDAO.php';
+require_once __DIR__ . '/../Controller/LocationController.php';
 
 session_start();
 

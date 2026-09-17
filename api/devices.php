@@ -2,7 +2,7 @@
 
 header('Content-Type: application/json; charset=utf-8');
 
-require_once __DIR__ . '/../../model/DeviceDAO.php';
+require_once __DIR__ . '/../model/DeviceDAO.php';
 
 function responseJson($code, $data)
 {

@@ -1,0 +1,16 @@
+<svg width="240" height="72" viewBox="0 0 240 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="g1" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#7EF7AD"/>
+      <stop offset="100%" stop-color="#1FBF63"/>
+    </linearGradient>
+  </defs>
+  <rect width="240" height="72" rx="18" fill="#07150F"/>
+  <g transform="translate(12 12)">
+    <rect x="0" y="0" width="48" height="48" rx="14" fill="url(#g1)"/>
+    <path d="M16 16C16 12.6863 18.6863 10 22 10H26C29.3137 10 32 12.6863 32 16V20.5C32 23.8137 29.3137 26.5 26 26.5H22C18.6863 26.5 16 23.8137 16 20.5V16Z" fill="#07150F"/>
+    <path d="M19 27L24 22L28 26L34 18" stroke="#7EF7AD" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="33" cy="17" r="3.5" fill="#07150F" stroke="#7EF7AD" stroke-width="2"/>
+  </g>
+  <text x="76" y="43" fill="#ECFDF5" font-family="Segoe UI, Arial, sans-serif" font-size="26" font-weight="700" letter-spacing="1">sadag</text>
+</svg>
