@@ -1,5 +1,10 @@
 <?php
 
+/*
+ * LEGADO — ver aviso em model/Project.php. Mantido por compatibilidade
+ * com dados já gravados na tabela `projects`; não usar em telas novas.
+ */
+
 require_once __DIR__ . '/Connection.php';
 require_once __DIR__ . '/Project.php';
 

@@ -41,6 +41,11 @@ try {
         (int) $userId
     );
 
+    foreach ($devices as &$device) {
+        unset($device['api_key_hash']);
+    }
+    unset($device);
+
     responseJson(200, [
         'success' => true,
         'devices' => $devices

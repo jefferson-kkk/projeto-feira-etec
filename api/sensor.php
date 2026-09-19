@@ -1,5 +1,12 @@
 <?php
 
+/*
+ * LEGADO: endpoint de ingestão da antiga tabela `projects`/
+ * `sensor_data`. O ESP32 deve enviar leituras para api/receive.php,
+ * que grava em `devices`/`sensor_readings` (o que o dashboard lê).
+ * Mantido só por compatibilidade com firmwares antigos.
+ */
+
 header('Content-Type: application/json; charset=utf-8');
 
 require_once __DIR__ . '/../model/Connection.php';

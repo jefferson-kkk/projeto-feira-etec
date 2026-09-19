@@ -14,6 +14,7 @@ class Device
     private $wifiStatus;
     private $esp32Id;
     private $lastOnline;
+    private $lastSeenAt;
     private $createdAt;
     private $updatedAt;
 
@@ -24,14 +25,15 @@ class Device
         $manufacturerCode,
         $description = null,
         $locationId = null,
-        $sensorType = 'TGS2610',
+        $sensorType = 'MQ-6',
         $status = 'offline',
         $firmwareVersion = null,
         $wifiStatus = null,
         $esp32Id = null,
         $lastOnline = null,
         $createdAt = null,
-        $updatedAt = null
+        $updatedAt = null,
+        $lastSeenAt = null
     ) {
         $this->id = $id;
         $this->userId = $userId;
@@ -47,6 +49,7 @@ class Device
         $this->lastOnline = $lastOnline;
         $this->createdAt = $createdAt;
         $this->updatedAt = $updatedAt;
+        $this->lastSeenAt = $lastSeenAt;
     }
 
     public function getId()
@@ -107,6 +110,11 @@ class Device
     public function getLastOnline()
     {
         return $this->lastOnline;
+    }
+
+    public function getLastSeenAt()
+    {
+        return $this->lastSeenAt;
     }
 
     public function getCreatedAt()

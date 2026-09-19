@@ -1,5 +1,12 @@
 <?php
 
+/*
+ * LEGADO: endpoint de cadastro/edição da antiga tabela `projects`.
+ * O cadastro atual de dispositivos usa api/manage.php (tabela
+ * `devices`), chamado por project-connect.php, dispositivo.php e
+ * pelo modal "Conectar dispositivo" do dashboard.php.
+ */
+
 header('Content-Type: application/json; charset=utf-8');
 
 session_start();

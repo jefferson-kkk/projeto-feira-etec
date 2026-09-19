@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS devices (
     manufacturer_code VARCHAR(64) NOT NULL,
     description VARCHAR(500) DEFAULT NULL,
     location_id INT DEFAULT NULL,
-    sensor_type VARCHAR(100) NOT NULL DEFAULT 'TGS2610',
+    sensor_type VARCHAR(100) NOT NULL DEFAULT 'MQ-6',
     status VARCHAR(32) NOT NULL DEFAULT 'offline',
     firmware_version VARCHAR(64) DEFAULT NULL,
     wifi_status VARCHAR(64) DEFAULT NULL,

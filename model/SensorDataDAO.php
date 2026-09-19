@@ -1,5 +1,9 @@
 <?php
 
+/*
+ * LEGADO — ver aviso em model/SensorData.php. Não usar em telas novas.
+ */
+
 require_once __DIR__ . '/Connection.php';
 
 class SensorDataDAO

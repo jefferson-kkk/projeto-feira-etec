@@ -97,6 +97,16 @@ $rssi = isset($body['rssi'])
 
 
 /**
+ * Leitura bruta do ADC (0-4095), separada da estimativa em ppm.
+ * O MQ-6 não possui calibração (curva Rs/R0) neste projeto, então
+ * o ppm enviado é apenas uma estimativa; o raw_adc é o dado real.
+ */
+$rawAdc = isset($body['raw_adc'])
+    ? (int)$body['raw_adc']
+    : null;
+
+
+/**
  * IP do ESP32.
  *
  * O servidor web identifica o IP da conexão.
@@ -143,9 +153,11 @@ if ($ppm < 0 || $ppm > 1000000) {
 try {
 
     /*
-     * Conecta ao DAO de dispositivos.
+     * Conecta ao DAO de dispositivos. Sem checar o schema aqui (caminho
+     * quente, chamado a cada poucos segundos pelo ESP32) — quem garante
+     * que as tabelas existem é qualquer outra tela do sistema.
      */
-    $deviceDAO = new DeviceDAO();
+    $deviceDAO = new DeviceDAO(false);
 
 
     /*
@@ -198,7 +210,7 @@ try {
     if (
         !$row ||
         empty($row['api_key_hash']) ||
-        !password_verify(
+        !DeviceDAO::verifyApiKey(
             $apiKey,
             $row['api_key_hash']
         )
@@ -212,16 +224,37 @@ try {
 
 
     /*
-     * Classificação inicial da leitura.
-     *
-     * Esses valores podem ser alterados
-     * posteriormente para os limites do projeto.
+     * Classificação da leitura usando os limites configurados
+     * pelo usuário em user_settings (tela de Configurações do
+     * dashboard). Caso o usuário nunca tenha salvado uma
+     * configuração, usa os mesmos padrões do dashboard.
      */
-    if ($ppm < 400) {
+    $alertPpm = 550;
+    $criticalPpm = 700;
+
+    $settingsStmt = $conn->prepare("
+        SELECT alert_ppm, critical_ppm
+        FROM user_settings
+        WHERE user_id = :user_id
+        LIMIT 1
+    ");
+
+    $settingsStmt->execute([
+        ':user_id' => $device->getUserId()
+    ]);
+
+    $userSettings = $settingsStmt->fetch(PDO::FETCH_ASSOC);
+
+    if ($userSettings) {
+        $alertPpm = (float) $userSettings['alert_ppm'];
+        $criticalPpm = (float) $userSettings['critical_ppm'];
+    }
+
+    if ($ppm < $alertPpm) {
 
         $status = 'normal';
 
-    } elseif ($ppm < 700) {
+    } elseif ($ppm < $criticalPpm) {
 
         $status = 'atencao';
 
@@ -232,9 +265,10 @@ try {
 
 
     /*
-     * Cria o DAO responsável pelas leituras.
+     * Cria o DAO responsável pelas leituras (sem checar schema, mesmo
+     * motivo do DeviceDAO acima).
      */
-    $readingDAO = new ReadingDAO();
+    $readingDAO = new ReadingDAO(false);
 
 
     /*
@@ -244,7 +278,8 @@ try {
         $device->getId(),
         $ppm,
         $status,
-        $rssi
+        $rssi,
+        $rawAdc
     );
 
 
@@ -290,6 +325,8 @@ try {
             'esp32_id' => $esp32Id,
 
             'ppm' => $ppm,
+
+            'raw_adc' => $rawAdc,
 
             'status' => $status,
 

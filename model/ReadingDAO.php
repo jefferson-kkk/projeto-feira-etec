@@ -7,9 +7,14 @@ class ReadingDAO
 {
     private $conn;
 
-    public function __construct()
+    // $ensureSchema=false pula a verificação de schema (ver DeviceDAO).
+    public function __construct($ensureSchema = true)
     {
         $this->conn = Connection::getConnection();
+
+        if (!$ensureSchema) {
+            return;
+        }
 
         $this->conn->exec("
             CREATE TABLE IF NOT EXISTS sensor_readings (
@@ -33,26 +38,55 @@ class ReadingDAO
             ENGINE=InnoDB
             DEFAULT CHARSET=utf8mb4
         ");
+
+        /*
+         * raw_adc guarda a leitura bruta do ADC (0-4095) enviada
+         * pelo ESP32, separada da estimativa em ppm. O MQ-6 não
+         * está calibrado (curva Rs/R0) neste projeto, então o ppm
+         * é apenas uma estimativa e o raw_adc é o dado real do sensor.
+         */
+        $this->ensureColumn(
+            'sensor_readings',
+            'raw_adc',
+            'INT DEFAULT NULL'
+        );
+    }
+
+    private function ensureColumn($table, $column, $definition)
+    {
+        $stmt = $this->conn->query(
+            "SHOW COLUMNS FROM {$table} LIKE " .
+            $this->conn->quote($column)
+        );
+
+        if (!$stmt->fetch(PDO::FETCH_ASSOC)) {
+            $this->conn->exec(
+                "ALTER TABLE {$table} ADD COLUMN {$column} {$definition}"
+            );
+        }
     }
 
     public function create(
         $deviceId,
         $ppm,
         $status,
-        $wifiRssi = null
+        $wifiRssi = null,
+        $rawAdc = null
     ) {
         $stmt = $this->conn->prepare("
             INSERT INTO sensor_readings (
                 device_id,
                 ppm,
                 reading_status,
-                wifi_rssi
+                wifi_rssi,
+                raw_adc
             )
             VALUES (
                 :device_id,
                 :ppm,
                 :reading_status,
-                :wifi_rssi
+                :wifi_rssi,
+                :raw_adc
             )
         ");
 
@@ -60,7 +94,8 @@ class ReadingDAO
             ':device_id' => $deviceId,
             ':ppm' => $ppm,
             ':reading_status' => $status,
-            ':wifi_rssi' => $wifiRssi
+            ':wifi_rssi' => $wifiRssi,
+            ':raw_adc' => $rawAdc
         ]);
 
         return (int) $this->conn->lastInsertId();
@@ -95,6 +130,7 @@ class ReadingDAO
                 id,
                 device_id,
                 ppm,
+                raw_adc,
                 reading_status,
                 wifi_rssi,
                 created_at

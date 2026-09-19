@@ -200,6 +200,82 @@ try {
 
     /*
     |--------------------------------------------------------------------------
+    | VINCULAR DISPOSITIVO JÁ CADASTRADO (outra conta)
+    |--------------------------------------------------------------------------
+    |
+    | Não duplica o cadastro do ESP32 (esp32_id continua único). Serve
+    | para permitir que mais de uma conta acompanhe o mesmo dispositivo
+    | físico — por exemplo, várias pessoas testando o mesmo sensor na
+    | feira. Só funciona se a conta souber a api_key do dispositivo,
+    | então continua seguro: sem a chave, ninguém enxerga o dispositivo
+    | de outra pessoa.
+    |--------------------------------------------------------------------------
+    */
+
+    if ($action === 'join_device') {
+
+        $esp32Id = trim($body['esp32_id'] ?? '');
+        $apiKey = trim($body['api_key'] ?? '');
+
+        if ($esp32Id === '' || $apiKey === '') {
+            out(422, [
+                'success' => false,
+                'message' => 'Informe o ID do ESP32 e a API key do dispositivo.'
+            ]);
+        }
+
+        $device = $dao->getByEsp32Id($esp32Id);
+
+        if (!$device) {
+            out(404, [
+                'success' => false,
+                'message' => 'Nenhum dispositivo com esse ESP32 ID foi encontrado.'
+            ]);
+        }
+
+        $row = $dao->getConnection()->prepare("
+            SELECT api_key_hash FROM devices WHERE id = :id LIMIT 1
+        ");
+        $row->execute([':id' => $device->getId()]);
+        $hash = $row->fetchColumn();
+
+        if (!$hash || !DeviceDAO::verifyApiKey($apiKey, $hash)) {
+            out(401, [
+                'success' => false,
+                'message' => 'API key incorreta para esse dispositivo.'
+            ]);
+        }
+
+        if ((int)$device->getUserId() === (int)$userId) {
+            out(200, [
+                'success' => true,
+                'device_id' => $device->getId(),
+                'message' => 'Você já é o dono deste dispositivo.'
+            ]);
+        }
+
+        $dao->shareWithUser($device->getId(), $userId);
+
+        auditManage(
+            $dao->getConnection(),
+            $userId,
+            'device_shared',
+            'devices',
+            $device->getId(),
+            ['esp32_id' => $esp32Id],
+            $device->getId()
+        );
+
+        out(200, [
+            'success' => true,
+            'device_id' => $device->getId(),
+            'message' => 'Dispositivo vinculado à sua conta com sucesso.'
+        ]);
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
     | CRIAR DISPOSITIVO
     |--------------------------------------------------------------------------
     */
@@ -284,6 +360,11 @@ try {
             random_bytes(24)
         );
 
+        /*
+         * SENSOR ATUAL DO PROJETO
+         */
+        $sensorType = trim($body['sensor_type'] ?? 'MQ-6');
+
 
         /*
         |--------------------------------------------------------------------------
@@ -310,10 +391,7 @@ try {
                     ? (int)$body['location_id']
                     : null,
 
-            /*
-             * SENSOR ATUAL DO PROJETO
-             */
-          ':sensor_type' => trim($body['sensor_type'] ?? 'MQ-135'),
+            ':sensor_type' => $sensorType,
 
             ':status' =>
                 'offline',
@@ -330,10 +408,7 @@ try {
                 $esp32Id,
 
             ':api_key_hash' =>
-                password_hash(
-                    $apiKey,
-                    PASSWORD_DEFAULT
-                )
+                DeviceDAO::hashApiKey($apiKey)
         ]);
 
 
@@ -354,7 +429,7 @@ try {
 
                 'esp32_id' => $esp32Id,
 
-                'sensor_type' => 'MQ-135'
+                'sensor_type' => $sensorType
             ],
 
             $deviceId
@@ -423,7 +498,7 @@ try {
         $sensorType = trim(
             $body['sensor_type']
             ?? $device->getSensorType()
-            ?? 'MQ-135'
+            ?? 'MQ-6'
         );
 
 

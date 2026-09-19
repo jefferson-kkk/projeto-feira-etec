@@ -130,7 +130,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $locationId,
                     $description,
                     $firmwareVersion,
-                    'MQ135'
+                    'MQ-6'
                 );
 
 
@@ -202,7 +202,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $description,
                 $status,
                 $firmwareVersion,
-                'MQ135'
+                'MQ-6'
             );
 
 
@@ -594,7 +594,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         type="text"
                         name="manufacturer_code"
                         required
-                        placeholder="AERIS-MQ135-001"
+                        placeholder="AERIS-MQ6-001"
                     >
 
                 </div>
@@ -610,7 +610,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         type="text"
                         name="esp32_id"
                         required
-                        placeholder="ESP32-MQ135-001"
+                        placeholder="ESP32-MQ6-001"
                     >
 
                 </div>
@@ -672,7 +672,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     <input
                         type="text"
-                        value="MQ135"
+                        value="MQ-6"
                         disabled
                     >
 
@@ -739,7 +739,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </h3>
 
                             <p class="subtitle">
-                                MQ135
+                                <?= htmlspecialchars(
+                                    $device['sensor_type'] ?? 'MQ-6',
+                                    ENT_QUOTES,
+                                    'UTF-8'
+                                ) ?>
                             </p>
 
                         </div>

@@ -1,5 +1,10 @@
 <?php
 
+/*
+ * LEGADO — ver aviso em model/Project.php. O fluxo atual de cadastro
+ * de dispositivos usa Controller/DeviceController.php.
+ */
+
 require_once __DIR__ . '/../model/ProjectDAO.php';
 
 class ProjectController

@@ -1,5 +1,12 @@
 <?php
 
+/*
+ * LEGADO: endpoint da antiga tabela `projects`/`sensor_data`.
+ * O dashboard atual (dashboard.php) usa api/data.php, que lê da
+ * tabela `devices`/`sensor_readings`. Mantido só por compatibilidade
+ * com integrações antigas que ainda apontem para este arquivo.
+ */
+
 header('Content-Type: application/json; charset=utf-8');
 
 require_once __DIR__ . '/../model/Connection.php';

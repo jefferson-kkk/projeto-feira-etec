@@ -1,5 +1,14 @@
 <?php
 
+/*
+ * LEGADO: esta classe representa a tabela `projects`, de uma versão
+ * anterior do cadastro de dispositivos. O cadastro atual (usado por
+ * project-connect.php, dispositivo.php e dashboard.php) usa a tabela
+ * `devices` através de Device/DeviceDAO/DeviceController.
+ *
+ * Este arquivo é mantido apenas para não apagar dados históricos já
+ * gravados na tabela `projects`; nenhuma tela nova deve gravar aqui.
+ */
 class Project
 {
     private $id;

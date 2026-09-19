@@ -34,7 +34,7 @@ class DeviceController
         $locationId = null,
         $description = null,
         $firmwareVersion = null,
-        $sensorType = 'MQ135'
+        $sensorType = 'MQ-6'
     ) {
         if ($name === '') {
             throw new Exception('Nome do dispositivo é obrigatório.');
@@ -79,10 +79,7 @@ class DeviceController
             ':firmware_version' => $firmwareVersion,
             ':wifi_status' => null,
             ':esp32_id' => $esp32Id,
-            ':api_key_hash' => password_hash(
-                $apiKey,
-                PASSWORD_DEFAULT
-            )
+            ':api_key_hash' => DeviceDAO::hashApiKey($apiKey)
         ]);
 
         return [
@@ -101,7 +98,7 @@ class DeviceController
         $description = null,
         $status = 'offline',
         $firmwareVersion = null,
-        $sensorType = 'MQ135'
+        $sensorType = 'MQ-6'
     ) {
         $device = $this->deviceDAO->getById(
             $id,

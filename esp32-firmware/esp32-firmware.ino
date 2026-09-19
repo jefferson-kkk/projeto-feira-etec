@@ -5,6 +5,8 @@
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
+#include "soc/soc.h"
+#include "soc/rtc_cntl_reg.h"
 
 // =====================================================
 // WI-FI
@@ -26,9 +28,9 @@ const char* WIFI_PASSWORD = "COLOQUE_A_SENHA_DA_REDE";
 // expor o servidor publicamente — tudo roda na rede local.
 // =====================================================
 
-const char* SERVER_HOST = "192.168.0.10";          // IP do PC na rede local
-const int   SERVER_PORT = 80;
-const char* API_BASE    = "/projeto-feira-etec/api"; // ajuste ao caminho real do projeto
+const char* SERVER_HOST = "192.168.0.8";           // IP real desta maquina na rede local
+const int   SERVER_PORT = 8000;                    // porta do servidor PHP rodando agora (php -S)
+const char* API_BASE    = "/api";                  // sem prefixo (servidor roda direto na raiz do projeto)
 
 // =====================================================
 // IDENTIFICAÇÃO DO DISPOSITIVO
@@ -92,8 +94,8 @@ bool oledOk = false;
 //                    sensor e substitua converterParaPpmEstimado().
 // =====================================================
 
-#define NUM_LEITURAS 20
-#define INTERVALO_LEITURA_MS 20
+#define NUM_LEITURAS 10
+#define INTERVALO_LEITURA_MS 15
 
 #define ADC_MIN 0
 #define ADC_MAX 4095
@@ -125,8 +127,8 @@ bool oledOk = false;
 // INTERVALOS (não bloqueantes)
 // =====================================================
 
-#define INTERVALO_ENVIO_MS     8000UL   // envia leitura para /receive.php
-#define INTERVALO_ANUNCIO_MS   15000UL  // avisa presença para /app.php?action=announce
+#define INTERVALO_ENVIO_MS     500UL    // envia leitura para /receive.php (perto do limite util do sensor)
+#define INTERVALO_ANUNCIO_MS   10000UL  // avisa presença para /app.php?action=announce
 #define INTERVALO_RECONEXAO_MS 5000UL   // intervalo entre tentativas de reconexão Wi-Fi
 #define TIMEOUT_WIFI_MS        15000UL  // tempo máximo esperando conectar
 
@@ -492,6 +494,11 @@ void iniciarServidorLocal() {
 // =====================================================
 
 void setup() {
+  // Mitigacao para queda de tensao ao ligar o radio Wi-Fi (nao
+  // substitui uma fonte/cabo USB adequados — so evita reset em
+  // picos pequenos causados pelo consumo do Wi-Fi).
+  WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0);
+
   Serial.begin(115200);
   delay(300);
 
@@ -565,5 +572,5 @@ void loop() {
   Serial.print(" | WiFi: ");
   Serial.println(WiFi.status() == WL_CONNECTED ? String(WiFi.RSSI()) + " dBm" : "OFFLINE");
 
-  delay(150);
+  delay(50);
 }

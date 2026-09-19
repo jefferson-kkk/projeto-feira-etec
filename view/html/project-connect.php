@@ -2,12 +2,13 @@
 
 require_once __DIR__ . '/_auth.php';
 
-require_once __DIR__ . '/../../Controller/ProjectController.php';
+require_once __DIR__ . '/../../Controller/DeviceController.php';
 
-$projectController = new ProjectController();
+$deviceController = new DeviceController();
 
 $message = '';
 $error = '';
+$apiKeyCriada = null;
 
 $requestMethod = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 
@@ -16,28 +17,31 @@ if ($requestMethod === 'POST') {
     $name = trim($_POST['name'] ?? '');
     $manufacturerCode = trim($_POST['manufacturer_code'] ?? '');
     $firmwareVersion = trim($_POST['firmware_version'] ?? '');
-    $wifiStatus = trim($_POST['wifi_status'] ?? '');
+    $esp32Id = trim($_POST['esp32_id'] ?? '');
 
     if ($name === '' || $manufacturerCode === '') {
         $error = 'Nome do projeto e código do dispositivo são obrigatórios.';
+    } elseif ($esp32Id === '') {
+        $error = 'Informe o ID do ESP32 (definido no firmware do dispositivo).';
     } else {
         try {
 
-            $projectController->createProject(
+            $resultado = $deviceController->createDevice(
                 $currentUser->getid(),
                 $name,
                 $manufacturerCode,
-                $firmwareVersion ?: null,
-                $wifiStatus ?: null,
+                $esp32Id,
                 null,
-                null
+                null,
+                $firmwareVersion ?: null,
+                'MQ-6'
             );
 
-            header('Location: home.php');
-            exit;
+            $apiKeyCriada = $resultado['api_key'];
+            $message = 'Dispositivo cadastrado com sucesso.';
 
         } catch (Exception $e) {
-            $error = 'Não foi possível criar o projeto: ' . $e->getMessage();
+            $error = 'Não foi possível criar o dispositivo: ' . $e->getMessage();
         }
     }
 }
@@ -1198,6 +1202,15 @@ if ($requestMethod === 'POST') {
                 </div>
             <?php endif; ?>
 
+            <?php if ($apiKeyCriada): ?>
+                <div class="message" style="border-color:rgba(69,233,154,.4);color:#a8f2c8;background:rgba(69,233,154,.08)">
+                    <strong><?php echo htmlspecialchars($message, ENT_QUOTES, 'UTF-8'); ?></strong>
+                    <p style="margin:10px 0 4px">API Key do ESP32 (mostrada apenas uma vez, copie agora):</p>
+                    <code style="display:block;padding:10px 12px;border-radius:8px;background:rgba(0,0,0,.35);word-break:break-all;font-family:var(--mono);font-size:12px;color:#fff"><?php echo htmlspecialchars($apiKeyCriada, ENT_QUOTES, 'UTF-8'); ?></code>
+                    <p style="margin:10px 0 0">Use esse valor e o ID do ESP32 informado no firmware para configurar o envio de leituras.</p>
+                </div>
+            <?php endif; ?>
+
             <form
                 method="post"
                 action="<?php echo htmlspecialchars($_SERVER['PHP_SELF'] ?? 'project-connect.php', ENT_QUOTES, 'UTF-8'); ?>"
@@ -1233,7 +1246,7 @@ if ($requestMethod === 'POST') {
                         id="manufacturer_code"
                         type="text"
                         name="manufacturer_code"
-                        placeholder="AERIS-MQ135-001"
+                        placeholder="AERIS-MQ6-001"
                         required
                     >
 
@@ -1265,17 +1278,18 @@ if ($requestMethod === 'POST') {
 
                     <div class="form-group">
 
-                        <label for="wifi_status">
-                            Status de rede
-                            <span>Opcional</span>
+                        <label for="esp32_id">
+                            ID do ESP32
+                            <span>Obrigatório</span>
                         </label>
 
                         <input
                             class="input"
-                            id="wifi_status"
+                            id="esp32_id"
                             type="text"
-                            name="wifi_status"
-                            placeholder="Ex.: Wi-Fi conectado"
+                            name="esp32_id"
+                            placeholder="ESP32-MQ6-001"
+                            required
                         >
 
                     </div>
@@ -1310,7 +1324,7 @@ if ($requestMethod === 'POST') {
 
                     <div class="summary-item">
                         <small>Sensor</small>
-                        <strong>MQ135</strong>
+                        <strong>MQ-6</strong>
                     </div>
 
                     <div class="summary-item">

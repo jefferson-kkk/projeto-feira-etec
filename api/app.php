@@ -166,14 +166,153 @@ if ($action === 'announce') {
     out(200, ['success' => true, 'registered' => (bool)$deviceId, 'device_id' => $deviceId ? (int)$deviceId : null]);
 }
 
+/*
+ * Varre a rede local (mesma sub-rede /24 da máquina que roda o
+ * backend) procurando ESP32 da Aeris, batendo no endpoint local
+ * /info que o firmware expõe (ver esp32-firmware/esp32-firmware.ino).
+ * Isso encontra dispositivos ligados na rede mesmo que ainda não
+ * tenham enviado nenhum anúncio para o servidor.
+ *
+ * Limitação real: só funciona se o PC e o ESP32 estiverem na MESMA
+ * rede Wi-Fi/sub-rede, e se o roteador não tiver "isolamento de
+ * clientes" (AP isolation) ativado — comum em Wi-Fi de escola/evento.
+ * Nesse caso, peça para desativar o isolamento ou use um roteador à
+ * parte para a demonstração.
+ */
+/*
+ * Descobre as sub-redes IPv4 privadas (RFC1918) em que esta máquina
+ * está presente. No Apache/XAMPP, $_SERVER['SERVER_ADDR'] já resolve
+ * isso sozinho; isso aqui é um reforço para quando ele vem vazio
+ * (acontece no servidor embutido do PHP quando ligado em 0.0.0.0).
+ */
+function subnetsDestaMaquina()
+{
+    $serverAddr = $_SERVER['SERVER_ADDR'] ?? '';
+
+    if (preg_match('/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/', $serverAddr) && $serverAddr !== '127.0.0.1') {
+        $p = explode('.', $serverAddr);
+        return ["{$p[0]}.{$p[1]}.{$p[2]}."];
+    }
+
+    if (!function_exists('net_get_interfaces')) {
+        return [];
+    }
+
+    $subnets = [];
+
+    foreach (net_get_interfaces() as $iface) {
+        if (empty($iface['up'])) {
+            continue;
+        }
+
+        foreach ($iface['unicast'] ?? [] as $addr) {
+            $ip = $addr['address'] ?? '';
+
+            $isPrivada =
+                preg_match('/^10\./', $ip) ||
+                preg_match('/^192\.168\./', $ip) ||
+                preg_match('/^172\.(1[6-9]|2\d|3[0-1])\./', $ip);
+
+            if ($isPrivada) {
+                $p = explode('.', $ip);
+                $subnets["{$p[0]}.{$p[1]}.{$p[2]}."] = true;
+            }
+        }
+    }
+
+    return array_keys($subnets);
+}
+
+function scanLanForAerisDevices()
+{
+    $subnets = subnetsDestaMaquina();
+
+    if (empty($subnets)) {
+        return [];
+    }
+
+    $serverAddr = $_SERVER['SERVER_ADDR'] ?? '';
+    $mh = curl_multi_init();
+    $handles = [];
+
+    foreach ($subnets as $subnetBase) {
+        for ($i = 1; $i <= 254; $i++) {
+            $ip = $subnetBase . $i;
+            if ($ip === $serverAddr) {
+                continue;
+            }
+
+            $ch = curl_init("http://{$ip}/info");
+            curl_setopt_array($ch, [
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_CONNECTTIMEOUT_MS => 250,
+                CURLOPT_TIMEOUT_MS => 400,
+                CURLOPT_FAILONERROR => false,
+            ]);
+            curl_multi_add_handle($mh, $ch);
+            $handles[$ip] = $ch;
+        }
+    }
+
+    $running = null;
+    do {
+        curl_multi_exec($mh, $running);
+        if ($running > 0) {
+            curl_multi_select($mh, 0.2);
+        }
+    } while ($running > 0);
+
+    $found = [];
+
+    foreach ($handles as $ip => $ch) {
+        $body = curl_multi_getcontent($ch);
+
+        if ($body) {
+            $data = json_decode($body, true);
+
+            if (is_array($data) && !empty($data['esp32_id'])) {
+                $found[$data['esp32_id']] = [
+                    'esp32_id' => $data['esp32_id'],
+                    'manufacturer_code' => $data['manufacturer_code'] ?? null,
+                    'hostname' => $data['hostname'] ?? null,
+                    'ip_address' => $ip,
+                    'wifi_rssi' => $data['rssi'] ?? null,
+                    'firmware_version' => $data['firmware_version'] ?? null,
+                    'seen_at' => date('Y-m-d H:i:s'),
+                    'via' => 'scan_ao_vivo'
+                ];
+            }
+        }
+
+        curl_multi_remove_handle($mh, $ch);
+        curl_close($ch);
+    }
+
+    curl_multi_close($mh);
+
+    return $found;
+}
+
 if ($action === 'discover') {
     if (!$userId) out(401, ['success' => false, 'message' => 'Usuário não autenticado.']);
+
     $stmt = $db->prepare("SELECT p.esp32_id,p.manufacturer_code,p.hostname,p.ip_address,p.wifi_rssi,p.firmware_version,p.seen_at,d.id AS device_id,d.name,d.location_id FROM device_presence p LEFT JOIN devices d ON d.esp32_id=p.esp32_id AND d.user_id=:uid WHERE p.seen_at>=DATE_SUB(NOW(),INTERVAL 30 SECOND) ORDER BY p.seen_at DESC");
     $stmt->execute([':uid' => $userId]);
+
     $seen = [];
     foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $r) {
+        $r['via'] = 'anuncio_recente';
         $seen[$r['esp32_id']] = $r;
     }
+
+    // Varredura ao vivo da rede local; não sobrescreve um anúncio
+    // recente já encontrado (que tem mais dados, como device_id).
+    foreach (scanLanForAerisDevices() as $esp32Id => $device) {
+        if (!isset($seen[$esp32Id])) {
+            $seen[$esp32Id] = $device;
+        }
+    }
+
     out(200, ['success' => true, 'devices' => array_values($seen)]);
 }
 

@@ -61,6 +61,8 @@ if ($requestMethod === 'POST') {
 
         if ($nome === '' || !filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($senha) < 6) {
             $erro = 'Informe nome, e-mail válido e uma senha com pelo menos 6 caracteres.';
+        } elseif ($controller->getLoginByEmail($email)) {
+            $erro = 'Já existe uma conta cadastrada com esse e-mail.';
         } else {
           try {
             $novoUsuario = $controller->criarLogin($nome, $senha, $email, $data);
@@ -71,7 +73,7 @@ if ($requestMethod === 'POST') {
             header('Location: home.php');
             exit;
           } catch (Exception $e) {
-            $erro = 'Erro ao cadastrar: ' . $e->getMessage();
+            $erro = 'Não foi possível concluir o cadastro. Tente novamente.';
           }
         }
     }

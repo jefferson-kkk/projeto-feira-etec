@@ -1,5 +1,10 @@
 <?php
 
+/*
+ * LEGADO: leituras da antiga tabela `sensor_data`, associada à
+ * tabela `projects`. O fluxo atual de leituras usa Reading/ReadingDAO
+ * com a tabela `sensor_readings`, associada à tabela `devices`.
+ */
 class SensorData
 {
     private $id;
