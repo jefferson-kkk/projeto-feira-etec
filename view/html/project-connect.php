@@ -52,7 +52,7 @@ if ($requestMethod === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aeris Guard — Adicionar dispositivo</title>
+    <title>Sadag — Adicionar dispositivo</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1058,12 +1058,12 @@ if ($requestMethod === 'POST') {
 <main class="page">
 
     <header class="topbar">
-        <a class="brand" href="home.php" aria-label="Voltar ao Aeris Guard">
-            <span class="brand-mark">A</span>
+        <a class="brand" href="home.php" aria-label="Voltar ao Sadag">
+            <span class="brand-mark">S</span>
 
             <span class="brand-text">
                 <small>Enterprise IoT</small>
-                <strong>Aeris Guard</strong>
+                <strong>Sadag</strong>
             </span>
         </a>
 
@@ -1081,7 +1081,7 @@ if ($requestMethod === 'POST') {
 
         <div class="visual">
 
-            <div class="eyebrow">Aeris Signal / Instalação</div>
+            <div class="eyebrow">Sadag Signal / Instalação</div>
 
             <h1>
                 Dê uma identidade ao seu
@@ -1089,7 +1089,7 @@ if ($requestMethod === 'POST') {
             </h1>
 
             <p class="lead">
-                Vincule o hardware à sua conta e deixe o Aeris Guard cuidar
+                Vincule o hardware à sua conta e deixe o Sadag cuidar
                 da organização das informações. O cadastro é o ponto de
                 entrada entre o dispositivo físico e o painel de monitoramento.
             </p>

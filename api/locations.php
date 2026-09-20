@@ -34,7 +34,11 @@ try {
             'name' => $location->getName(),
             'description' => $location->getDescription(),
             'sector' => $location->getSector(),
-            'floor' => $location->getFloor()
+            'floor' => $location->getFloor(),
+            'pos_x' => (float)$location->getPosX(),
+            'pos_y' => (float)$location->getPosY(),
+            'width' => (float)$location->getWidth(),
+            'depth' => (float)$location->getDepth()
         ];
     }, $locations);
 

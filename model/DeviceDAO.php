@@ -267,6 +267,13 @@ class DeviceDAO
 
     public function getAllByUser($userId)
     {
+        /*
+         * latest_ppm/latest_status vêm de uma leitura por dispositivo
+         * (a mais recente) — sem isso, telas que listam VÁRIOS
+         * dispositivos de uma vez (Sensores, Planta 3D) só tinham o
+         * último dado do dispositivo selecionado no topo, mostrando
+         * "--"/cinza para os outros mesmo com leitura recente.
+         */
         $stmt = $this->conn->prepare("
             SELECT
                 d.*,
@@ -274,10 +281,19 @@ class DeviceDAO
                 l.sector,
                 l.floor,
                 (d.user_id = :user_id_owner) AS is_owner,
-                TIMESTAMPDIFF(SECOND, d.last_seen_at, NOW()) AS seconds_since_seen
+                TIMESTAMPDIFF(SECOND, d.last_seen_at, NOW()) AS seconds_since_seen,
+                latest.ppm AS latest_ppm,
+                latest.reading_status AS latest_status
             FROM devices d
             LEFT JOIN locations l
                 ON l.id = d.location_id
+            LEFT JOIN sensor_readings latest
+                ON latest.id = (
+                    SELECT r.id FROM sensor_readings r
+                    WHERE r.device_id = d.id
+                    ORDER BY r.created_at DESC, r.id DESC
+                    LIMIT 1
+                )
             WHERE d.user_id = :user_id
                OR EXISTS (
                     SELECT 1 FROM device_shares s

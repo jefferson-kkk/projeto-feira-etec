@@ -27,6 +27,27 @@ class LocationDAO
             ENGINE=InnoDB
             DEFAULT CHARSET=utf8mb4
         ");
+
+        /*
+         * Retângulo do cômodo na planta (metros), usado pelo editor
+         * de planta e pela cena 3D. Padrão 3x3m na origem — o usuário
+         * reposiciona no editor.
+         */
+        $this->ensureColumn('locations', 'pos_x', 'DECIMAL(6,2) NOT NULL DEFAULT 0');
+        $this->ensureColumn('locations', 'pos_y', 'DECIMAL(6,2) NOT NULL DEFAULT 0');
+        $this->ensureColumn('locations', 'width', 'DECIMAL(6,2) NOT NULL DEFAULT 3');
+        $this->ensureColumn('locations', 'depth', 'DECIMAL(6,2) NOT NULL DEFAULT 3');
+    }
+
+    private function ensureColumn($table, $column, $definition)
+    {
+        $stmt = $this->conn->query(
+            "SHOW COLUMNS FROM {$table} LIKE " . $this->conn->quote($column)
+        );
+
+        if (!$stmt->fetch(PDO::FETCH_ASSOC)) {
+            $this->conn->exec("ALTER TABLE {$table} ADD COLUMN {$column} {$definition}");
+        }
     }
 
     private function map($row)
@@ -39,7 +60,11 @@ class LocationDAO
             $row['sector'] ?? null,
             $row['floor'] ?? null,
             $row['created_at'] ?? null,
-            $row['updated_at'] ?? null
+            $row['updated_at'] ?? null,
+            $row['pos_x'] ?? 0,
+            $row['pos_y'] ?? 0,
+            $row['width'] ?? 3,
+            $row['depth'] ?? 3
         );
     }
 
@@ -98,14 +123,22 @@ class LocationDAO
                 name,
                 description,
                 sector,
-                floor
+                floor,
+                pos_x,
+                pos_y,
+                width,
+                depth
             )
             VALUES (
                 :user_id,
                 :name,
                 :description,
                 :sector,
-                :floor
+                :floor,
+                :pos_x,
+                :pos_y,
+                :width,
+                :depth
             )
         ");
 
@@ -114,10 +147,37 @@ class LocationDAO
             ':name' => $location->getName(),
             ':description' => $location->getDescription(),
             ':sector' => $location->getSector(),
-            ':floor' => $location->getFloor()
+            ':floor' => $location->getFloor(),
+            ':pos_x' => $location->getPosX(),
+            ':pos_y' => $location->getPosY(),
+            ':width' => $location->getWidth(),
+            ':depth' => $location->getDepth()
         ]);
 
         return (int) $this->conn->lastInsertId();
+    }
+
+    /*
+     * Salva só a posição/tamanho do cômodo na planta — usado pelo
+     * editor visual a cada vez que o usuário solta um retângulo
+     * arrastado ou redimensionado, sem precisar reenviar nome/etc.
+     */
+    public function updateLayout($id, $userId, $posX, $posY, $width, $depth)
+    {
+        $stmt = $this->conn->prepare("
+            UPDATE locations
+            SET pos_x = :pos_x, pos_y = :pos_y, width = :width, depth = :depth, updated_at = NOW()
+            WHERE id = :id AND user_id = :user_id
+        ");
+
+        return $stmt->execute([
+            ':id' => $id,
+            ':user_id' => $userId,
+            ':pos_x' => $posX,
+            ':pos_y' => $posY,
+            ':width' => $width,
+            ':depth' => $depth
+        ]);
     }
 
     public function update(Location $location)

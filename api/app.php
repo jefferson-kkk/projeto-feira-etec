@@ -9,6 +9,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 require_once __DIR__ . '/../model/Connection.php';
+require_once __DIR__ . '/../model/Mailer.php';
+require_once __DIR__ . '/../model/AiReply.php';
 session_start();
 
 function out($status, $data)
@@ -90,6 +92,12 @@ function setup($db)
         INDEX idx_support_ticket (ticket_id, created_at),
         CONSTRAINT fk_support_ticket FOREIGN KEY (ticket_id) REFERENCES support_tickets(id) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+    $check = $db->query("SHOW COLUMNS FROM support_tickets LIKE 'escalated'");
+    if (!$check->fetch(PDO::FETCH_ASSOC)) $db->exec("ALTER TABLE support_tickets ADD COLUMN escalated TINYINT(1) NOT NULL DEFAULT 0");
+    $check = $db->query("SHOW COLUMNS FROM notifications LIKE 'related_id'");
+    if (!$check->fetch(PDO::FETCH_ASSOC)) $db->exec("ALTER TABLE notifications ADD COLUMN related_id BIGINT DEFAULT NULL");
+    $check = $db->query("SHOW COLUMNS FROM support_messages LIKE 'is_read'");
+    if (!$check->fetch(PDO::FETCH_ASSOC)) $db->exec("ALTER TABLE support_messages ADD COLUMN is_read TINYINT(1) NOT NULL DEFAULT 0");
     $db->exec("CREATE TABLE IF NOT EXISTS device_presence (
         id BIGINT AUTO_INCREMENT PRIMARY KEY,
         esp32_id VARCHAR(64) NOT NULL,
@@ -113,6 +121,12 @@ function setup($db)
         if (!$check->fetch(PDO::FETCH_ASSOC)) $db->exec("ALTER TABLE devices ADD COLUMN {$c[0]} {$c[1]}");
     }
 }
+function isAdmin($db, $userId)
+{
+    $s = $db->prepare("SELECT is_admin FROM login WHERE id=:u");
+    $s->execute([':u' => $userId]);
+    return (bool)$s->fetchColumn();
+}
 function audit($db, $action, $entity = null, $entityId = null, $details = null, $userId = null, $deviceId = null)
 {
     $stmt = $db->prepare("INSERT INTO audit_logs (user_id,device_id,action,entity,entity_id,details,ip_address,user_agent) VALUES (:u,:d,:a,:e,:ei,:details,:ip,:ua)");
@@ -127,14 +141,20 @@ function audit($db, $action, $entity = null, $entityId = null, $details = null, 
         ':ua' => substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 500)
     ]);
 }
-if (!defined('SUPPORT_EMAIL')) define('SUPPORT_EMAIL', 'COLOQUE_SEU_EMAIL_DE_SUPORTE');
+/*
+ * Por padrão, os chamados de suporte chegam no mesmo email configurado
+ * em config/mail.php (o mesmo que envia). Se quiser um endereço de
+ * suporte diferente do de envio, defina SUPPORT_EMAIL antes daqui.
+ */
+if (!defined('SUPPORT_EMAIL')) {
+    $mailConfigFile = __DIR__ . '/../config/mail.php';
+    $mailConfig = is_file($mailConfigFile) ? require $mailConfigFile : [];
+    define('SUPPORT_EMAIL', $mailConfig['from_email'] ?? 'COLOQUE_SEU_EMAIL_DE_SUPORTE');
+}
 function mailSupport($to, $subject, $message, $replyTo = null)
 {
     if (!$to || strpos($to, 'COLOQUE_SEU_EMAIL') !== false) return false;
-    $headers = "MIME-Version: 1.0\r\nContent-Type: text/plain; charset=UTF-8\r\n";
-    $headers .= "From: Aeris Guard <no-reply@localhost>\r\n";
-    if ($replyTo && filter_var($replyTo, FILTER_VALIDATE_EMAIL)) $headers .= "Reply-To: {$replyTo}\r\n";
-    return @mail($to, 'Aeris Guard - ' . $subject, $message, $headers);
+    return Mailer::send($to, 'Sadag - ' . $subject, $message, $replyTo);
 }
 
 $db = Connection::getConnection();
@@ -319,7 +339,7 @@ if ($action === 'discover') {
 if (!$userId) out(401, ['success' => false, 'message' => 'Usuário não autenticado.']);
 
 if ($action === 'profile') {
-    $q = $db->prepare("SELECT id,nome,email,username,display_name,avatar,phone,biography,language,timezone FROM login WHERE id=:id LIMIT 1");
+    $q = $db->prepare("SELECT id,nome,email,username,display_name,avatar,phone,biography,language,timezone,is_admin FROM login WHERE id=:id LIMIT 1");
     $q->execute([':id' => $userId]);
     out(200, ['success' => true, 'profile' => $q->fetch(PDO::FETCH_ASSOC)]);
 }
@@ -363,7 +383,7 @@ if ($action === 'save_settings') {
     out(200, ['success' => true, 'message' => 'Configurações salvas.']);
 }
 if ($action === 'notifications') {
-    $s = $db->prepare("SELECT id,type,title,message,severity,is_read,created_at FROM notifications WHERE user_id=:u ORDER BY created_at DESC,id DESC LIMIT 50");
+    $s = $db->prepare("SELECT id,type,title,message,severity,is_read,related_id,created_at FROM notifications WHERE user_id=:u ORDER BY created_at DESC,id DESC LIMIT 50");
     $s->execute([':u' => $userId]);
     out(200, ['success' => true, 'notifications' => $s->fetchAll(PDO::FETCH_ASSOC)]);
 }
@@ -376,62 +396,174 @@ if ($action === 'support') {
     $sub = $action;
 }
 if ($action === 'support_list') {
-    $s = $db->prepare("SELECT id,subject,category,status,created_at,updated_at FROM support_tickets WHERE user_id=:u ORDER BY updated_at DESC");
+    $s = $db->prepare("SELECT id,subject,category,status,escalated,created_at,updated_at FROM support_tickets WHERE user_id=:u ORDER BY updated_at DESC");
     $s->execute([':u' => $userId]);
     out(200, ['success' => true, 'tickets' => $s->fetchAll(PDO::FETCH_ASSOC)]);
 }
 if ($action === 'support_messages') {
     $ticket = (int)($_GET['ticket_id'] ?? 0);
+    $afterId = (int)($_GET['after_id'] ?? 0);
     $s = $db->prepare("SELECT t.* FROM support_tickets t WHERE t.id=:id AND t.user_id=:u");
     $s->execute([':id' => $ticket, ':u' => $userId]);
     if (!$s->fetch()) out(404, ['success' => false, 'message' => 'Chamado não encontrado.']);
-    $m = $db->prepare("SELECT id,sender_type,message,email_sent,created_at FROM support_messages WHERE ticket_id=:t ORDER BY created_at,id");
-    $m->execute([':t' => $ticket]);
+    if ($afterId > 0) {
+        $m = $db->prepare("SELECT id,sender_type,message,email_sent,created_at FROM support_messages WHERE ticket_id=:t AND id>:a ORDER BY created_at,id");
+        $m->execute([':t' => $ticket, ':a' => $afterId]);
+    } else {
+        $m = $db->prepare("SELECT id,sender_type,message,email_sent,created_at FROM support_messages WHERE ticket_id=:t ORDER BY created_at,id");
+        $m->execute([':t' => $ticket]);
+    }
+    $db->prepare("UPDATE support_messages SET is_read=1 WHERE ticket_id=:t AND sender_type='support'")->execute([':t' => $ticket]);
     out(200, ['success' => true, 'messages' => $m->fetchAll(PDO::FETCH_ASSOC)]);
+}
+if ($action === 'support_close') {
+    $d = body();
+    $ticket = (int)($d['ticket_id'] ?? 0);
+    $s = $db->prepare("UPDATE support_tickets SET status='encerrado', updated_at=NOW() WHERE id=:t AND user_id=:u");
+    $s->execute([':t' => $ticket, ':u' => $userId]);
+    audit($db, 'support_ticket_closed', 'support_tickets', $ticket, null, $userId);
+    out(200, ['success' => true]);
+}
+/*
+ * Anti-spam simples: no máximo 30 mensagens a cada 5 minutos por
+ * usuário (soma de todas as conversas), pra não estourar a cota
+ * gratuita da API de IA nem lotar o banco.
+ */
+function checkSupportRateLimit($db, $userId)
+{
+    $rate = $db->prepare("SELECT COUNT(*) FROM support_messages m JOIN support_tickets t ON t.id=m.ticket_id WHERE t.user_id=:u AND m.sender_type='user' AND m.created_at > DATE_SUB(NOW(), INTERVAL 5 MINUTE)");
+    $rate->execute([':u' => $userId]);
+    if ((int)$rate->fetchColumn() >= 30) {
+        out(429, ['success' => false, 'message' => 'Muitas mensagens em pouco tempo. Aguarde alguns minutos.']);
+    }
 }
 if ($action === 'support_create') {
     $d = body();
-    $subject = trim($d['subject'] ?? '');
     $message = trim($d['message'] ?? '');
-    $category = trim($d['category'] ?? 'Problema técnico');
     $deviceId = (int)($d['device_id'] ?? 0) ?: null;
-    if ($subject === '' || $message === '') out(422, ['success' => false, 'message' => 'Assunto e mensagem são obrigatórios.']);
+    if ($message === '') out(422, ['success' => false, 'message' => 'Escreva uma mensagem para começar.']);
+    if (strlen($message) > 2000) out(422, ['success' => false, 'message' => 'Mensagem muito longa (máximo 2000 caracteres).']);
+    checkSupportRateLimit($db, $userId);
+    $subject = strlen($message) > 60 ? substr($message, 0, 60) . '…' : $message;
     $db->beginTransaction();
     try {
-        $t = $db->prepare("INSERT INTO support_tickets(user_id,device_id,subject,category) VALUES(:u,:d,:s,:c)");
-        $t->execute([':u' => $userId, ':d' => $deviceId, ':s' => $subject, ':c' => $category]);
+        $t = $db->prepare("INSERT INTO support_tickets(user_id,device_id,subject,category) VALUES(:u,:d,:s,'Conversa')");
+        $t->execute([':u' => $userId, ':d' => $deviceId, ':s' => $subject]);
         $ticketId = (int)$db->lastInsertId();
         $m = $db->prepare("INSERT INTO support_messages(ticket_id,user_id,sender_type,message) VALUES(:t,:u,'user',:m)");
         $m->execute([':t' => $ticketId, ':u' => $userId, ':m' => $message]);
-        $emailQ = $db->prepare("SELECT email,nome FROM login WHERE id=:u");
-        $emailQ->execute([':u' => $userId]);
-        $user = $emailQ->fetch(PDO::FETCH_ASSOC);
-        $to = SUPPORT_EMAIL;
-        $sent = mailSupport($to, 'Chamado #AG-' . $ticketId . ' - ' . $subject, $message, $user['email'] ?? null);
-        $db->prepare("UPDATE support_messages SET email_sent=:s WHERE id=:id")->execute([':s' => $sent ? 1 : 0, ':id' => $db->lastInsertId()]);
+        $ai = AiReply::generate($userId, $message, []);
+        if ($ai) {
+            $db->prepare("INSERT INTO support_messages(ticket_id,sender_type,message) VALUES(:t,'ai',:m)")->execute([':t' => $ticketId, ':m' => $ai['reply']]);
+        }
         $db->commit();
-        audit($db, 'support_ticket_created', 'support_tickets', $ticketId, ['subject' => $subject, 'email_sent' => $sent], $userId, $deviceId);
-        out(201, ['success' => true, 'ticket_id' => $ticketId, 'email_sent' => $sent, 'message' => 'Chamado registrado.']);
+        audit($db, 'support_conversation_created', 'support_tickets', $ticketId, ['ai_source' => $ai['source'] ?? null], $userId, $deviceId);
+        out(201, ['success' => true, 'ticket_id' => $ticketId, 'ai_reply' => $ai['reply'] ?? null]);
     } catch (Throwable $e) {
         $db->rollBack();
-        out(500, ['success' => false, 'message' => 'Não foi possível abrir o chamado: ' . $e->getMessage()]);
+        out(500, ['success' => false, 'message' => 'Não foi possível iniciar a conversa: ' . $e->getMessage()]);
     }
 }
 if ($action === 'support_send') {
     $d = body();
     $ticket = (int)($d['ticket_id'] ?? 0);
     $message = trim($d['message'] ?? '');
-    if (!$ticket || $message === '') out(422, ['success' => false, 'message' => 'Chamado e mensagem são obrigatórios.']);
-    $q = $db->prepare("SELECT t.id,t.subject,l.email FROM support_tickets t JOIN login l ON l.id=t.user_id WHERE t.id=:t AND t.user_id=:u");
+    if (!$ticket || $message === '') out(422, ['success' => false, 'message' => 'Conversa e mensagem são obrigatórias.']);
+    if (strlen($message) > 2000) out(422, ['success' => false, 'message' => 'Mensagem muito longa (máximo 2000 caracteres).']);
+    checkSupportRateLimit($db, $userId);
+    $q = $db->prepare("SELECT id,subject,escalated FROM support_tickets WHERE id=:t AND user_id=:u");
     $q->execute([':t' => $ticket, ':u' => $userId]);
     $t = $q->fetch(PDO::FETCH_ASSOC);
-    if (!$t) out(404, ['success' => false, 'message' => 'Chamado não encontrado.']);
+    if (!$t) out(404, ['success' => false, 'message' => 'Conversa não encontrada.']);
     $m = $db->prepare("INSERT INTO support_messages(ticket_id,user_id,sender_type,message) VALUES(:t,:u,'user',:m)");
     $m->execute([':t' => $ticket, ':u' => $userId, ':m' => $message]);
+    $db->prepare("UPDATE support_tickets SET updated_at=NOW() WHERE id=:t")->execute([':t' => $ticket]);
+    audit($db, 'support_message_sent', 'support_messages', $db->lastInsertId(), ['ticket_id' => $ticket], $userId);
+    $aiReply = null;
+    if (!(int)$t['escalated']) {
+        $hist = $db->prepare("SELECT sender_type,message FROM support_messages WHERE ticket_id=:t AND sender_type IN ('user','ai') ORDER BY created_at DESC,id DESC LIMIT 8");
+        $hist->execute([':t' => $ticket]);
+        $history = array_reverse($hist->fetchAll(PDO::FETCH_ASSOC));
+        $ai = AiReply::generate($userId, $message, $history);
+        if ($ai) {
+            $db->prepare("INSERT INTO support_messages(ticket_id,sender_type,message) VALUES(:t,'ai',:m)")->execute([':t' => $ticket, ':m' => $ai['reply']]);
+            $aiReply = $ai['reply'];
+        }
+    }
+    out(201, ['success' => true, 'ai_reply' => $aiReply]);
+}
+if ($action === 'support_escalate') {
+    $d = body();
+    $ticket = (int)($d['ticket_id'] ?? 0);
+    $q = $db->prepare("SELECT t.id,t.subject,l.nome,l.email FROM support_tickets t JOIN login l ON l.id=t.user_id WHERE t.id=:t AND t.user_id=:u");
+    $q->execute([':t' => $ticket, ':u' => $userId]);
+    $t = $q->fetch(PDO::FETCH_ASSOC);
+    if (!$t) out(404, ['success' => false, 'message' => 'Conversa não encontrada.']);
+    $db->prepare("UPDATE support_tickets SET escalated=1, status='aberto', updated_at=NOW() WHERE id=:t")->execute([':t' => $ticket]);
+    $hist = $db->prepare("SELECT sender_type,message FROM support_messages WHERE ticket_id=:t ORDER BY created_at,id");
+    $hist->execute([':t' => $ticket]);
+    $linhas = array_map(function ($r) {
+        $quem = $r['sender_type'] === 'user' ? 'Usuário' : ($r['sender_type'] === 'ai' ? 'Sadag Assist' : 'Equipe');
+        return "{$quem}: {$r['message']}";
+    }, $hist->fetchAll(PDO::FETCH_ASSOC));
+    $resumo = "O usuário pediu para falar com a equipe. Histórico da conversa:\n\n" . implode("\n\n", $linhas);
+    $sent = mailSupport(SUPPORT_EMAIL, 'Conversa #AG-' . $ticket . ' - atendimento humano solicitado', $resumo, $t['email']);
+    $sysMsg = $sent
+        ? 'Encaminhei sua conversa para a equipe Sadag agora — você vai receber a resposta aqui mesmo e por email.'
+        : 'Tentei encaminhar sua conversa para a equipe, mas o envio de email está indisponível no momento. A equipe ainda pode ver e responder pela Central da Equipe.';
+    $db->prepare("INSERT INTO support_messages(ticket_id,sender_type,message,email_sent) VALUES(:t,'ai',:m,:s)")->execute([':t' => $ticket, ':m' => $sysMsg, ':s' => $sent ? 1 : 0]);
+    audit($db, 'support_escalated', 'support_tickets', $ticket, ['email_sent' => $sent], $userId);
+    out(200, ['success' => true, 'email_sent' => $sent, 'system_message' => $sysMsg]);
+}
+/*
+ * A partir daqui, ações usadas pela equipe (central-equipe.php) para ver
+ * e responder chamados de QUALQUER usuário — por isso cada uma checa
+ * isAdmin() antes de tocar em dados de outra conta.
+ */
+if ($action === 'support_admin_list') {
+    if (!isAdmin($db, $userId)) out(403, ['success' => false, 'message' => 'Acesso restrito à equipe.']);
+    $s = $db->query("SELECT t.id,t.subject,t.category,t.status,t.created_at,t.updated_at,l.nome,l.email FROM support_tickets t JOIN login l ON l.id=t.user_id ORDER BY t.updated_at DESC LIMIT 200");
+    out(200, ['success' => true, 'tickets' => $s->fetchAll(PDO::FETCH_ASSOC)]);
+}
+if ($action === 'support_admin_messages') {
+    if (!isAdmin($db, $userId)) out(403, ['success' => false, 'message' => 'Acesso restrito à equipe.']);
+    $ticket = (int)($_GET['ticket_id'] ?? 0);
+    $afterId = (int)($_GET['after_id'] ?? 0);
+    $tq = $db->prepare("SELECT t.*,l.nome,l.email FROM support_tickets t JOIN login l ON l.id=t.user_id WHERE t.id=:id");
+    $tq->execute([':id' => $ticket]);
+    $ticketRow = $tq->fetch(PDO::FETCH_ASSOC);
+    if (!$ticketRow) out(404, ['success' => false, 'message' => 'Chamado não encontrado.']);
+    if ($afterId > 0) {
+        $m = $db->prepare("SELECT id,sender_type,message,email_sent,created_at FROM support_messages WHERE ticket_id=:t AND id>:a ORDER BY created_at,id");
+        $m->execute([':t' => $ticket, ':a' => $afterId]);
+    } else {
+        $m = $db->prepare("SELECT id,sender_type,message,email_sent,created_at FROM support_messages WHERE ticket_id=:t ORDER BY created_at,id");
+        $m->execute([':t' => $ticket]);
+    }
+    out(200, ['success' => true, 'ticket' => $ticketRow, 'messages' => $m->fetchAll(PDO::FETCH_ASSOC)]);
+}
+if ($action === 'support_admin_reply') {
+    if (!isAdmin($db, $userId)) out(403, ['success' => false, 'message' => 'Acesso restrito à equipe.']);
+    $d = body();
+    $ticket = (int)($d['ticket_id'] ?? 0);
+    $message = trim($d['message'] ?? '');
+    if (!$ticket || $message === '') out(422, ['success' => false, 'message' => 'Chamado e mensagem são obrigatórios.']);
+    if (strlen($message) > 5000) out(422, ['success' => false, 'message' => 'Mensagem muito longa.']);
+    $q = $db->prepare("SELECT t.id,t.subject,l.id AS uid,l.nome,l.email FROM support_tickets t JOIN login l ON l.id=t.user_id WHERE t.id=:t");
+    $q->execute([':t' => $ticket]);
+    $t = $q->fetch(PDO::FETCH_ASSOC);
+    if (!$t) out(404, ['success' => false, 'message' => 'Chamado não encontrado.']);
+    $m = $db->prepare("INSERT INTO support_messages(ticket_id,user_id,sender_type,message) VALUES(:t,:u,'support',:m)");
+    $m->execute([':t' => $ticket, ':u' => $userId, ':m' => $message]);
     $mid = (int)$db->lastInsertId();
-    $sent = mailSupport(SUPPORT_EMAIL, 'Chamado #AG-' . $ticket . ' - nova mensagem', $message, $t['email']);
+    $origin = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'];
+    $link = $origin . '/view/html/dashboard.php#suporte';
+    $sent = mailSupport($t['email'], 'Atendimento #AG-' . $ticket . ' respondido', "Olá, {$t['nome']}.\n\nA equipe Sadag respondeu ao seu atendimento #AG-{$ticket} ({$t['subject']}):\n\n\"{$message}\"\n\nAcesse o painel para continuar a conversa:\n{$link}");
     $db->prepare("UPDATE support_messages SET email_sent=:s WHERE id=:id")->execute([':s' => $sent ? 1 : 0, ':id' => $mid]);
-    audit($db, 'support_message_sent', 'support_messages', $mid, ['ticket_id' => $ticket, 'email_sent' => $sent], $userId);
+    $db->prepare("UPDATE support_tickets SET status='respondido', updated_at=NOW() WHERE id=:t")->execute([':t' => $ticket]);
+    $db->prepare("INSERT INTO notifications(user_id,type,title,message,severity,related_id) VALUES(:u,'support_reply','Nova resposta da equipe',:m,'info',:r)")
+        ->execute([':u' => $t['uid'], ':m' => "A equipe Sadag respondeu ao seu atendimento #AG-{$ticket}.", ':r' => $ticket]);
+    audit($db, 'support_admin_reply', 'support_messages', $mid, ['ticket_id' => $ticket, 'email_sent' => $sent], $userId);
     out(201, ['success' => true, 'email_sent' => $sent]);
 }
 if ($action === 'audit') {

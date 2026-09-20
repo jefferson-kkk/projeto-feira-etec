@@ -1,0 +1,25 @@
+Servidor do Sadag (Caddy + PHP FastCGI)
+================================================
+
+Por que isso existe:
+O servidor de testes simples do PHP (`php -S`) só atende UMA requisição
+por vez — não dá pra ter a tela ao vivo (SSE) sem travar o resto do
+site. Caddy + php-cgi resolvem isso, atendendo várias coisas ao mesmo
+tempo, sem precisar de instalação nem direitos de administrador.
+
+Como usar:
+1. Dê duplo clique em "iniciar-servidor.bat"
+2. Acesse http://localhost:8000/view/html/acesso.php
+
+Se o caddy.exe estiver faltando (ele NÃO fica no Git, é grande demais):
+Baixe de novo com este comando no PowerShell, dentro desta pasta:
+
+  Invoke-WebRequest -Uri "https://caddyserver.com/api/download?os=windows&arch=amd64" -OutFile "caddy.exe"
+
+Para parar tudo: abra o Gerenciador de Tarefas e encerre os processos
+"caddy.exe" e "php-cgi.exe".
+
+Arquivos:
+- Caddyfile            -> configuração do servidor (porta 8000, aponta pro projeto)
+- iniciar-servidor.bat -> liga os dois processos de uma vez
+- caddy.exe            -> o servidor em si (baixado, não fica no Git)

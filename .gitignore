@@ -1,0 +1,6 @@
+/tools/caddy.exe
+/tools/caddy.log
+/tools/caddy.err.log
+/config/mail.php
+/config/claude.php
+/config/gemini.php

@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../../Controller/Controller.php';
+require_once __DIR__ . '/../../model/Mailer.php';
 
 session_start();
 
@@ -13,6 +14,43 @@ if (!empty($_SESSION['user_id'])) {
 
 $controller = new LoginController();
 $erro = '';
+$aviso = '';
+$modo = 'login';
+$unverifiedEmail = '';
+
+function linkAcesso($params)
+{
+    $base = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'] . dirname($_SERVER['PHP_SELF']) . '/acesso.php';
+    return $base . '?' . http_build_query($params);
+}
+
+function enviarEmailVerificacao($controller, $usuario)
+{
+    $token = $controller->criarTokenVerificacaoEmail($usuario->getid());
+    $link = linkAcesso(['verify' => $token]);
+    $corpo = "Olá, {$usuario->getnome()}.\n\nConfirme seu email para ativar sua conta no Sadag, clicando no link abaixo (válido por 24h):\n\n{$link}\n\nSe você não criou essa conta, ignore este email.";
+    return Mailer::send($usuario->getemail(), 'Confirme seu email', $corpo);
+}
+
+// Link de verificação de email (clicado a partir do email recebido no cadastro)
+if (isset($_GET['verify'])) {
+    $id = $controller->verificarTokenEmail(trim($_GET['verify']));
+    if ($id) {
+        $aviso = 'Email confirmado! Você já pode entrar com sua senha.';
+    } else {
+        $erro = 'Link de verificação inválido ou expirado. Peça um novo abaixo.';
+    }
+}
+
+// Link de redefinição de senha (clicado a partir do email de "esqueci minha senha")
+$resetToken = trim($_GET['reset'] ?? '');
+if ($resetToken !== '' && $requestMethod === 'GET') {
+    if ($controller->getIdPorTokenRecuperacao($resetToken)) {
+        $modo = 'reset';
+    } else {
+        $erro = 'Link de redefinição inválido ou expirado. Peça um novo.';
+    }
+}
 
 if ($requestMethod === 'POST') {
     $tipo = $_POST['tipo'] ?? '';
@@ -39,7 +77,10 @@ if ($requestMethod === 'POST') {
             }
         }
 
-        if ($isValidPassword) {
+        if ($isValidPassword && !$usuario->getemailVerified()) {
+            $erro = 'Confirme seu email antes de entrar. Enviamos um link de confirmação quando você criou a conta.';
+            $unverifiedEmail = $email;
+        } elseif ($isValidPassword) {
             if ($needsRehash) {
                 $controller->atualizarSenha($usuario->getid(), $senha);
             }
@@ -50,9 +91,9 @@ if ($requestMethod === 'POST') {
             $controller->atualizarUltimoLogin($usuario->getid());
             header('Location: home.php');
             exit;
+        } else {
+            $erro = 'E-mail ou senha inválidos.';
         }
-
-        $erro = 'E-mail ou senha inválidos.';
     } elseif ($tipo === 'cadastro') {
         $nome = trim($_POST['nome'] ?? '');
         $email = trim($_POST['email'] ?? '');
@@ -66,15 +107,38 @@ if ($requestMethod === 'POST') {
         } else {
           try {
             $novoUsuario = $controller->criarLogin($nome, $senha, $email, $data);
-            session_regenerate_id(true);
-            $_SESSION['user_id'] = $novoUsuario->getid();
-            $_SESSION['usuario'] = $novoUsuario->getnome();
-            $controller->atualizarUltimoLogin($novoUsuario->getid());
-            header('Location: home.php');
-            exit;
+            enviarEmailVerificacao($controller, $novoUsuario);
+            $aviso = "Conta criada! Enviamos um link de confirmação para {$email}. Confirme seu email para poder entrar.";
           } catch (Exception $e) {
             $erro = 'Não foi possível concluir o cadastro. Tente novamente.';
           }
+        }
+    } elseif ($tipo === 'reenviar') {
+        $email = trim($_POST['email'] ?? '');
+        $usuario = $controller->getLoginByEmail($email);
+        if ($usuario && !$usuario->getemailVerified()) {
+            enviarEmailVerificacao($controller, $usuario);
+        }
+        $aviso = 'Se esse email existir e ainda não tiver sido confirmado, reenviamos o link agora.';
+    } elseif ($tipo === 'esqueci') {
+        $email = trim($_POST['email'] ?? '');
+        $dados = $controller->criarTokenRecuperacaoSenha($email);
+        if ($dados) {
+            $link = linkAcesso(['reset' => $dados['token']]);
+            Mailer::send($email, 'Redefinir senha', "Olá, {$dados['nome']}.\n\nClique no link abaixo para definir uma nova senha (válido por 1 hora):\n\n{$link}\n\nSe não foi você quem pediu, ignore este email — sua senha atual continua a mesma.");
+        }
+        $aviso = 'Se esse email existir na nossa base, enviamos um link de redefinição.';
+    } elseif ($tipo === 'redefinir') {
+        $token = trim($_POST['reset_token'] ?? '');
+        $novaSenha = trim($_POST['nova_senha'] ?? '');
+        if (strlen($novaSenha) < 6) {
+            $erro = 'A nova senha precisa ter pelo menos 6 caracteres.';
+            $modo = 'reset';
+            $resetToken = $token;
+        } elseif ($controller->redefinirSenhaPorToken($token, $novaSenha)) {
+            $aviso = 'Senha redefinida com sucesso! Você já pode entrar.';
+        } else {
+            $erro = 'Link de redefinição inválido ou expirado. Peça um novo.';
         }
     }
 }
@@ -86,7 +150,7 @@ if ($requestMethod === 'POST') {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#07100c">
-<title>Aeris Guard — Acesso</title>
+<title>Sadag — Acesso</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -171,17 +235,17 @@ button,input{font:inherit}button{color:inherit}a{color:inherit}
 <canvas id="background-canvas" aria-hidden="true"></canvas>
 <div class="noise" aria-hidden="true"></div><div class="grid" aria-hidden="true"></div><div class="edge-glow one" aria-hidden="true"></div><div class="edge-glow two" aria-hidden="true"></div>
 <main class="page">
-  <span class="vertical left">AERIS GUARD / SYSTEM ACCESS</span>
+  <span class="vertical left">SADAG / SYSTEM ACCESS</span>
   <span class="vertical right">ENVIRONMENTAL SAFETY / 2026</span>
   <div class="shell">
-    <section class="visual" aria-label="Identidade Aeris Guard">
+    <section class="visual" aria-label="Identidade Sadag">
       <div>
-        <div class="brand"><div class="brand-mark">A</div><div class="brand-copy"><small>Intelligent Safety</small><strong>Aeris Guard</strong></div></div>
+        <div class="brand"><div class="brand-mark">S</div><div class="brand-copy"><small>Intelligent Safety</small><strong>Sadag</strong></div></div>
         <div class="top-status"><i></i> sistema conectado</div>
       </div>
 
       <div class="visual-content">
-        <div class="eyebrow">Aeris Guard / acesso ao ecossistema</div>
+        <div class="eyebrow">Sadag / acesso ao ecossistema</div>
         <h1><span class="light">Segurança que</span><br><span class="light">começa <span class="green">antes</span></span><br><span class="light">do alerta.</span></h1>
         <p class="visual-copy">Uma plataforma criada para transformar leitura ambiental em informação clara, acompanhamento contínuo e respostas mais rápidas.</p>
 
@@ -190,14 +254,14 @@ button,input{font:inherit}button{color:inherit}a{color:inherit}
           <div class="route"><div class="route-line"></div></div>
           <div class="editorial-grid"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
           <div class="info-chip chip-a">Sensor<b>Leitura ambiental</b></div>
-          <div class="info-chip chip-c">Aeris Signal<b>Fluxo conectado</b></div>
+          <div class="info-chip chip-c">Sadag Signal<b>Fluxo conectado</b></div>
           <div class="info-chip chip-b">Painel<b>Informação em tempo real</b></div>
         </div>
       </div>
 
       <div class="visual-bottom">
-        <div class="bottom-list"><span class="active"><i></i> Plataforma Aeris</span><span><i></i> Monitoramento</span><span><i></i> Interface responsiva</span></div>
-        <div class="signature"><strong>AERIS / 01</strong>secure access</div>
+        <div class="bottom-list"><span class="active"><i></i> Plataforma Sadag</span><span><i></i> Monitoramento</span><span><i></i> Interface responsiva</span></div>
+        <div class="signature"><strong>SADAG / 01</strong>secure access</div>
       </div>
     </section>
 
@@ -205,8 +269,30 @@ button,input{font:inherit}button{color:inherit}a{color:inherit}
       <div class="auth-box">
         <div class="auth-top"><div class="auth-kicker">Acesso ao sistema</div><div class="protected"><i></i> Canal protegido</div></div>
         <h2 id="auth-title">Bem-vindo<br>de volta.</h2>
-        <p class="auth-intro">Acesse sua conta para continuar acompanhando seu ambiente pelo painel Aeris Guard.</p>
+        <p class="auth-intro">Acesse sua conta para continuar acompanhando seu ambiente pelo painel Sadag.</p>
         <?php if (!empty($erro)) echo '<p class="erro">' . htmlspecialchars($erro) . '</p>'; ?>
+        <?php if (!empty($aviso)) echo '<p class="erro" style="color:#42e38c;border-color:rgba(66,227,140,.35);background:rgba(66,227,140,.08)">' . htmlspecialchars($aviso) . '</p>'; ?>
+
+        <?php if ($unverifiedEmail !== ''): ?>
+        <form method="post" action="<?php echo htmlspecialchars($currentPage, ENT_QUOTES, 'UTF-8'); ?>" style="margin-bottom:16px">
+          <input type="hidden" name="tipo" value="reenviar">
+          <input type="hidden" name="email" value="<?php echo htmlspecialchars($unverifiedEmail, ENT_QUOTES, 'UTF-8'); ?>">
+          <button type="submit" class="submit-button" style="background:transparent;border:1px solid var(--border,rgba(255,255,255,.16))">Reenviar email de confirmação</button>
+        </form>
+        <?php endif; ?>
+
+        <?php if ($modo === 'reset'): ?>
+        <div class="form-shell">
+          <div class="form-panel visible" aria-hidden="false">
+            <form method="post" action="<?php echo htmlspecialchars($currentPage, ENT_QUOTES, 'UTF-8'); ?>">
+              <input type="hidden" name="tipo" value="redefinir">
+              <input type="hidden" name="reset_token" value="<?php echo htmlspecialchars($resetToken, ENT_QUOTES, 'UTF-8'); ?>">
+              <div class="input-group"><label for="nova-senha">Nova senha</label><div class="field"><input id="nova-senha" type="password" name="nova_senha" class="input-control" placeholder="Mínimo de 6 caracteres" autocomplete="new-password" required></div></div>
+              <button type="submit" class="submit-button">Definir nova senha</button>
+            </form>
+          </div>
+        </div>
+        <?php else: ?>
 
         <div class="tabs" role="tablist" aria-label="Modo de autenticação">
           <span class="tab-indicator"></span>
@@ -220,8 +306,13 @@ button,input{font:inherit}button{color:inherit}a{color:inherit}
               <input type="hidden" name="tipo" value="login">
               <div class="input-group"><label for="email-login">E-mail</label><div class="field"><input id="email-login" type="email" name="email" class="input-control" placeholder="seu@email.com" autocomplete="email" required></div></div>
               <div class="input-group"><label for="senha-login">Senha</label><div class="field"><input id="senha-login" type="password" name="senha" class="input-control" placeholder="Digite sua senha" autocomplete="current-password" required><button class="password-toggle" type="button" data-password="senha-login" aria-label="Mostrar senha"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" aria-hidden="true"><path d="M3.5 12s3-5 8.5-5 8.5 5 8.5 5-3 5-8.5 5-8.5-5-8.5-5Z" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="12" r="2.2" stroke="currentColor" stroke-width="1.5"/></svg></button></div></div>
-              <div class="form-meta"><span>Use seus dados cadastrados.</span><a href="#">Esqueceu a senha?</a></div>
+              <div class="form-meta"><span>Use seus dados cadastrados.</span><a href="javascript:void(0)" id="forgotToggle">Esqueceu a senha?</a></div>
               <button type="submit" class="submit-button">Entrar na plataforma</button>
+            </form>
+            <form method="post" action="<?php echo htmlspecialchars($currentPage, ENT_QUOTES, 'UTF-8'); ?>" id="forgotForm" style="display:none;margin-top:14px;padding-top:14px;border-top:1px solid var(--border,rgba(255,255,255,.12))">
+              <input type="hidden" name="tipo" value="esqueci">
+              <div class="input-group"><label for="email-forgot">Email da conta</label><div class="field"><input id="email-forgot" type="email" name="email" class="input-control" placeholder="seu@email.com" required></div></div>
+              <button type="submit" class="submit-button">Enviar link de redefinição</button>
             </form>
           </div>
 
@@ -231,14 +322,15 @@ button,input{font:inherit}button{color:inherit}a{color:inherit}
               <div class="input-group"><label for="nome-create">Nome completo</label><div class="field"><input id="nome-create" type="text" name="nome" class="input-control" placeholder="Como podemos chamar você?" autocomplete="name" required></div></div>
               <div class="input-group"><label for="email-create">E-mail</label><div class="field"><input id="email-create" type="email" name="email" class="input-control" placeholder="seu@email.com" autocomplete="email" required></div></div>
               <div class="input-group"><label for="senha-create">Senha</label><div class="field"><input id="senha-create" type="password" name="senha" class="input-control" placeholder="Mínimo de 6 caracteres" autocomplete="new-password" required><button class="password-toggle" type="button" data-password="senha-create" aria-label="Mostrar senha"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" aria-hidden="true"><path d="M3.5 12s3-5 8.5-5 8.5 5 8.5 5-3 5-8.5 5-8.5-5-8.5-5Z" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="12" r="2.2" stroke="currentColor" stroke-width="1.5"/></svg></button></div></div>
-              <div class="form-meta"><span>Crie seu acesso ao painel Aeris.</span></div>
+              <div class="form-meta"><span>Você receberá um email para confirmar sua conta.</span></div>
               <button type="submit" class="submit-button">Criar minha conta</button>
             </form>
           </div>
         </div>
+        <?php endif; ?>
 
         <div class="auth-note"><div class="note"><span>Experiência</span><strong>Acesso simples e direto</strong></div><div class="note"><span>Ecossistema</span><strong>Monitoramento conectado</strong></div></div>
-        <div class="auth-footer"><span><strong>Aeris Guard</strong> · Ambiente conectado</span><span>v1.0 · Secure Access</span></div>
+        <div class="auth-footer"><span><strong>Sadag</strong> · Ambiente conectado</span><span>v1.0 · Secure Access</span></div>
         <div class="legal">Seu acesso leva você diretamente ao painel de monitoramento.</div>
       </div>
     </section>
@@ -250,6 +342,7 @@ function updateIndicator(activeTab){if(!activeTab||!indicator)return;const rect=
 function activateTab(tab){tabs.forEach(button=>{const panel=document.getElementById(button.dataset.panel),active=button===tab;button.classList.toggle('active',active);button.setAttribute('aria-selected',active);if(active){panel.classList.remove('hidden','outgoing');panel.classList.add('visible');setTimeout(()=>{const input=panel.querySelector('input:not([type="hidden"])');if(input)input.focus()},300)}else if(!panel.classList.contains('hidden')){panel.classList.add('outgoing');panel.classList.remove('visible');setTimeout(()=>panel.classList.add('hidden'),330)}});updateIndicator(tab)}
 tabs.forEach(tab=>tab.addEventListener('click',()=>activateTab(tab)));window.addEventListener('load',()=>updateIndicator(document.querySelector('.tab.active')));window.addEventListener('resize',()=>updateIndicator(document.querySelector('.tab.active')));
 document.querySelectorAll('.password-toggle').forEach(btn=>btn.addEventListener('click',()=>{const input=document.getElementById(btn.dataset.password);if(!input)return;const visible=input.type==='text';input.type=visible?'password':'text';btn.setAttribute('aria-label',visible?'Mostrar senha':'Ocultar senha')}));
+const forgotToggle=document.getElementById('forgotToggle'),forgotForm=document.getElementById('forgotForm');if(forgotToggle&&forgotForm)forgotToggle.addEventListener('click',()=>{forgotForm.style.display=forgotForm.style.display==='none'?'block':'none'});
 const canvas=document.getElementById('background-canvas'),ctx=canvas.getContext('2d');let w=innerWidth,h=innerHeight,dpr=1,particles=[],running=true;const pointer={x:-9999,y:-9999};
 function count(){return innerWidth<600?34:innerWidth<900?54:innerWidth<1200?76:98}
 function makeParticle(){const edge=Math.random();let x=Math.random()*w,y=Math.random()*h;if(edge<.32){x=Math.random()*w*.36;y=Math.random()*h*.36}else if(edge>.68){x=w-Math.random()*w*.36;y=h-Math.random()*h*.36}return{x,y,vx:(Math.random()-.5)*.14,vy:(Math.random()-.5)*.14,r:Math.random()*1.15+.3,a:Math.random()*.16+.035,p:Math.random()*6.28}}
@@ -257,5 +350,8 @@ function resize(){w=innerWidth;h=innerHeight;dpr=Math.min(devicePixelRatio||1,2)
 function render(){if(!running)return;ctx.clearRect(0,0,w,h);for(const p of particles){p.p+=.008;p.x+=p.vx;p.y+=p.vy;if(p.x<-8)p.x=w+8;if(p.x>w+8)p.x=-8;if(p.y<-8)p.y=h+8;if(p.y>h+8)p.y=-8;const dx=pointer.x-p.x,dy=pointer.y-p.y,d=Math.hypot(dx,dy);if(d<140){p.x-=dx*.00035;p.y-=dy*.00035}}for(let i=0;i<particles.length;i++){const a=particles[i];ctx.beginPath();ctx.fillStyle=`rgba(66,227,140,${a.a+.02*Math.sin(a.p)})`;ctx.arc(a.x,a.y,a.r,0,Math.PI*2);ctx.fill();for(let j=i+1;j<particles.length;j++){const b=particles[j],dx=a.x-b.x,dy=a.y-b.y,d=Math.hypot(dx,dy);if(d<112){ctx.beginPath();ctx.strokeStyle=`rgba(66,227,140,${(1-d/112)*.045})`;ctx.lineWidth=.6;ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke()}}}requestAnimationFrame(render)}
 addEventListener('resize',resize);addEventListener('pointermove',e=>{pointer.x=e.clientX;pointer.y=e.clientY});addEventListener('pointerleave',()=>{pointer.x=-9999;pointer.y=-9999});resize();render();document.addEventListener('visibilitychange',()=>{running=document.visibilityState==='visible';if(running)requestAnimationFrame(render)});
 </script>
+<div vw class="enabled"><div vw-access-button class="active"></div><div vw-plugin-wrapper><div class="vw-plugin-top-wrapper"></div></div></div>
+<script src="https://vlibras.gov.br/app/vlibras-plugin.js"></script>
+<script>(function(){if(window.VLibras)new window.VLibras.Widget('https://vlibras.gov.br/app')})();</script>
 </body>
 </html>

@@ -13,13 +13,20 @@ $userName = htmlspecialchars($_SESSION['usuario'] ?? 'Usuário', ENT_QUOTES, 'UT
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Aeris Guard — Monitoramento</title>
+<title>Sadag — Monitoramento</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Sora:wght@600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <style>
 :root{color-scheme:dark;--bg:#070b13;--bg2:#0b1220;--panel:#111827;--panel2:#0e1625;--border:rgba(255,255,255,.08);--border2:rgba(255,255,255,.14);--text:#f4f7fb;--muted:#96a5bb;--faint:#5d6b80;--accent:#20d7b2;--accent2:#42e8c8;--green:#36d67a;--yellow:#ffc857;--orange:#ff8b42;--red:#ff5757;--blue:#5b8cff;--sidebar:228px;--radius:12px;--mono:'JetBrains Mono',monospace;--display:'Sora',sans-serif;--body:'Inter',sans-serif}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:radial-gradient(circle at 15% 0,rgba(32,215,178,.09),transparent 28%),radial-gradient(circle at 90% 10%,rgba(91,140,255,.08),transparent 28%),linear-gradient(180deg,var(--bg2),var(--bg))}body{color:var(--text);font-family:var(--body);overflow-x:hidden}button,input,select,textarea{font:inherit}button{color:inherit}a{text-decoration:none;color:inherit}
+.sidebar-toggle{position:fixed;top:14px;left:14px;z-index:80;width:34px;height:34px;border-radius:9px;background:rgba(17,24,39,.92);border:1px solid var(--border);color:var(--text);font-size:15px;line-height:1;cursor:pointer;backdrop-filter:blur(10px);box-shadow:0 8px 20px rgba(0,0,0,.25)}
+.sidebar-toggle:hover{background:rgba(255,255,255,.1)}
+.app.sidebar-collapsed{grid-template-columns:0 minmax(0,1fr)}
+.app.sidebar-collapsed .sidebar{padding:0;overflow:hidden;border-right:0;opacity:0;pointer-events:none}
+.app{transition:grid-template-columns .25s ease}
+.sidebar{transition:opacity .15s ease}
+@media(prefers-reduced-motion:reduce){.app,.sidebar{transition:none}}
 .app{min-height:100vh;display:grid;grid-template-columns:var(--sidebar) minmax(0,1fr)}.sidebar{position:sticky;top:0;height:100vh;padding:18px 14px;border-right:1px solid var(--border);background:rgba(5,10,18,.82);backdrop-filter:blur(22px);display:flex;flex-direction:column;gap:20px}.brand{display:flex;align-items:center;gap:10px;padding:5px 8px;font-family:var(--display);font-weight:800}.brand-mark{width:34px;height:34px;border-radius:10px;background:rgba(32,215,178,.1);border:1px solid rgba(32,215,178,.35);display:grid;place-items:center;color:var(--accent);box-shadow:0 0 24px rgba(32,215,178,.12)}.brand small{display:block;color:var(--muted);font:600 9px var(--body);letter-spacing:.16em;text-transform:uppercase}.brand strong{display:block;font-size:15px}
 .nav{display:grid;gap:5px}.nav-button{border:0;background:transparent;border-radius:10px;padding:11px 12px;display:flex;align-items:center;gap:11px;color:var(--muted);cursor:pointer;font-weight:600;text-align:left;transition:.18s}.nav-button:hover{background:rgba(255,255,255,.04);color:var(--text)}.nav-button.active{background:linear-gradient(90deg,rgba(32,215,178,.16),rgba(32,215,178,.035));color:var(--accent);box-shadow:inset 2px 0 var(--accent)}.nav-icon{width:25px;height:25px;border:1px solid var(--border2);border-radius:8px;display:grid;place-items:center;font-size:12px;background:rgba(255,255,255,.025)}
 .sidebar-bottom{margin-top:auto;display:grid;gap:10px}.system-box{border:1px solid var(--border);border-radius:var(--radius);padding:12px;background:rgba(255,255,255,.025)}.system-box small{color:var(--muted);display:block;margin-bottom:7px}.live-line{display:flex;align-items:center;gap:8px;color:var(--green);font-size:12px;font-weight:700}.dot{width:7px;height:7px;border-radius:50%;background:currentColor;box-shadow:0 0 0 5px rgba(54,214,122,.09)}.version{margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-size:11px;color:var(--faint)}
@@ -30,7 +37,7 @@ $userName = htmlspecialchars($_SESSION['usuario'] ?? 'Usuário', ENT_QUOTES, 'UT
 .empty{min-height:68vh;display:grid;place-items:center}.empty-card{max-width:680px;text-align:center;padding:48px 34px}.empty-icon{width:68px;height:68px;margin:0 auto 18px;border-radius:20px;border:1px solid rgba(32,215,178,.25);background:rgba(32,215,178,.08);display:grid;place-items:center;font-size:30px}.empty-card h2{font:800 25px var(--display);margin:0 0 8px}.empty-card p{max-width:540px;margin:0 auto 22px;color:var(--muted);line-height:1.7;font-size:13px}.empty-actions{display:flex;justify-content:center;gap:9px;flex-wrap:wrap}
 .dashboard-grid{display:grid;grid-template-columns:365px minmax(0,1fr);gap:14px;align-items:start}.stack{display:grid;gap:14px}.status-card{min-height:450px}.gauge{position:relative;width:min(100%,320px);margin:10px auto 0}.gauge svg{width:100%;height:auto;overflow:visible}.gauge-center{position:absolute;left:50%;top:92px;transform:translateX(-50%);text-align:center;width:220px}.status-icon{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;margin:0 auto 7px;background:rgba(54,214,122,.08);font-size:18px;color:var(--status-color,var(--green))}.status-label{font:800 16px var(--display);text-transform:uppercase;color:var(--status-color,var(--green))}.status-message{color:var(--muted);font-size:11px;margin:5px 0 9px}.ppm{font:800 45px var(--mono);line-height:1}.ppm-unit{color:var(--muted);font-size:12px;margin-top:3px}.gauge-scale{display:flex;justify-content:space-between;padding:0 32px;color:var(--faint);font-size:10px;margin-top:-12px}.meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}.meta{border:1px solid var(--border);background:rgba(255,255,255,.025);border-radius:9px;padding:10px}.meta span{display:block;color:var(--muted);font-size:9px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px}.meta strong{font-size:11px;overflow-wrap:anywhere}
 .chart-card{padding:0;overflow:hidden}.chart-head{padding:17px 18px 0}.chart-actions{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.range.active{color:var(--accent);border-color:rgba(32,215,178,.35);background:rgba(32,215,178,.07)}.chart-wrap{height:310px;padding:12px 14px 0;position:relative}.chart-wrap svg{width:100%;height:100%}.chart-tip{position:absolute;display:none;pointer-events:none;padding:7px 9px;background:#070c15;border:1px solid var(--border2);border-radius:8px;font-size:10px;box-shadow:0 12px 30px rgba(0,0,0,.35)}.chart-tip.show{display:grid;gap:2px}.chart-tip strong{font:700 12px var(--mono)}.summary{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--border)}.summary-cell{padding:12px 14px;border-right:1px solid var(--border)}.summary-cell:last-child{border-right:0}.summary-cell span{display:block;color:var(--muted);font-size:9px;text-transform:uppercase}.summary-cell strong{font:700 18px var(--mono)}.summary-cell small{color:var(--muted)}
-.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.metric{padding:13px;display:grid;gap:8px}.metric-top{display:flex;gap:9px;align-items:center}.metric-icon{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:rgba(32,215,178,.08);color:var(--accent);font:700 10px var(--mono)}.metric span{color:var(--muted);font-size:10px}.metric strong{display:block;font:700 18px var(--mono);margin-top:2px}.metric small{color:var(--faint);font-size:9px}.progress{height:4px;background:rgba(255,255,255,.06);border-radius:99px;overflow:hidden}.progress i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--blue));border-radius:inherit}
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.metrics-2{grid-template-columns:repeat(2,1fr)}.metric{padding:13px;display:grid;gap:8px}.metric-top{display:flex;gap:9px;align-items:center}.metric-icon{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:rgba(32,215,178,.08);color:var(--accent);font:700 10px var(--mono)}.metric span{color:var(--muted);font-size:10px}.metric strong{display:block;font:700 18px var(--mono);margin-top:2px}.metric small{color:var(--faint);font-size:9px}.progress{height:4px;background:rgba(255,255,255,.06);border-radius:99px;overflow:hidden}.progress i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--blue));border-radius:inherit}
 .events{display:grid;gap:9px}.event{display:grid;grid-template-columns:8px 1fr auto;gap:9px;align-items:start}.event i{width:7px;height:7px;border-radius:50%;margin-top:4px;background:var(--green);box-shadow:0 0 0 5px rgba(54,214,122,.08)}.event.warn i{background:var(--yellow)}.event.bad i{background:var(--red)}.event strong{font-size:11px}.event p{margin:2px 0 0;color:var(--muted);font-size:10px}.event time{color:var(--faint);font:500 9px var(--mono)}
 .sensor-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.sensor{padding:13px}.sensor header{display:flex;justify-content:space-between;gap:8px;align-items:center}.sensor h3{font-size:12px;margin:0}.reading{display:flex;align-items:baseline;gap:5px;margin:9px 0}.reading strong{font:700 24px var(--mono)}.reading span{font-size:10px;color:var(--muted)}.sensor-foot{display:flex;justify-content:space-between;align-items:center;color:var(--muted);font-size:9px}.online{color:var(--green)}.offline{color:var(--red)}
 .table-card{overflow:auto}.table{width:100%;border-collapse:collapse;min-width:720px}.table th,.table td{padding:11px 13px;border-bottom:1px solid var(--border);text-align:left;font-size:11px}.table th{font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);background:rgba(255,255,255,.025);cursor:default}.table tr:hover td{background:rgba(255,255,255,.018)}.status{display:inline-flex;padding:5px 8px;border-radius:999px;font-size:9px;font-weight:800;text-transform:uppercase}.status.normal{color:var(--green);background:rgba(54,214,122,.08)}.status.atencao{color:var(--yellow);background:rgba(255,200,87,.08)}.status.perigo{color:var(--red);background:rgba(255,87,87,.08)}.filters{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:8px;margin-bottom:12px}.pagination{display:flex;align-items:center;justify-content:space-between;padding:12px;color:var(--muted);font-size:10px}
@@ -38,6 +45,31 @@ $userName = htmlspecialchars($_SESSION['usuario'] ?? 'Usuário', ENT_QUOTES, 'UT
 .settings-layout{display:grid;grid-template-columns:200px minmax(0,1fr);gap:12px}.settings-nav{padding:10px;display:grid;gap:5px;height:max-content}.settings-tab{border:0;background:transparent;color:var(--muted);text-align:left;padding:10px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700}.settings-tab.active,.settings-tab:hover{background:rgba(32,215,178,.08);color:var(--accent)}.settings-pane{display:none}.settings-pane.active{display:block}.form-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.full{grid-column:1/-1}.switch-list{display:grid;gap:8px}.switch{display:flex;justify-content:space-between;gap:15px;align-items:center;padding:13px;border:1px solid var(--border);border-radius:9px;background:rgba(255,255,255,.02)}.switch strong{font-size:11px}.switch span{display:block;color:var(--muted);font-size:9px;font-weight:400;margin-top:3px}.switch input{appearance:none;width:40px;height:22px;border-radius:99px;background:#263244;position:relative;cursor:pointer}.switch input:before{content:'';position:absolute;width:16px;height:16px;left:3px;top:3px;border-radius:50%;background:#9aa8bd;transition:.2s}.switch input:checked{background:rgba(32,215,178,.35)}.switch input:checked:before{left:21px;background:var(--accent)}
 .profile{display:flex;align-items:center;gap:9px;position:relative}.avatar{width:34px;height:34px;border-radius:10px;border:1px solid var(--border2);background:rgba(255,255,255,.04);display:grid;place-items:center;font-size:17px;cursor:pointer}.profile-name{display:grid}.profile-name strong{font-size:11px}.profile-name span{font-size:9px;color:var(--muted)}.profile-menu{position:absolute;right:0;top:44px;width:210px;padding:8px;display:none;z-index:30}.profile-menu.open{display:block}.profile-menu button{width:100%;border:0;background:transparent;text-align:left;padding:9px;border-radius:8px;cursor:pointer;font-size:11px}.profile-menu button:hover{background:rgba(255,255,255,.05)}
 .notification{position:relative}.bell{width:34px;height:34px;border:1px solid var(--border2);border-radius:10px;background:rgba(255,255,255,.04);cursor:pointer}.badge{position:absolute;right:-3px;top:-4px;min-width:15px;height:15px;border-radius:99px;background:var(--red);color:#fff;font:700 8px var(--mono);display:grid;place-items:center;padding:0 4px}.notification-panel{position:absolute;right:0;top:44px;width:320px;max-height:420px;overflow:auto;padding:10px;display:none;z-index:30}.notification-panel.open{display:block}.notice{padding:10px;border-bottom:1px solid var(--border)}.notice:last-child{border-bottom:0}.notice strong{font-size:10px}.notice p{margin:3px 0;color:var(--muted);font-size:9px;line-height:1.5}.notice time{color:var(--faint);font:9px var(--mono)}
+.plan-layout{display:grid;grid-template-columns:1fr 1fr;gap:13px;align-items:start}
+.plan-card{min-height:480px;display:flex;flex-direction:column}
+.plan-editor{position:relative;margin-top:12px;flex:1;min-height:400px;border:1px solid var(--border);border-radius:12px;background:
+  linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),
+  linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px),
+  #0b1110;background-size:32px 32px;overflow:hidden;touch-action:none}
+.plan-room{fill:rgba(53,220,135,.14);stroke:rgba(53,220,135,.55);stroke-width:1.5;cursor:grab}
+.plan-room:active{cursor:grabbing}
+.plan-room-label{fill:#dce8e2;font:700 11px "Inter",sans-serif;pointer-events:none}
+.plan-room-handle{fill:#35dc87;cursor:nwse-resize}
+.plan-device-dot{stroke:#06120b;stroke-width:1.5}
+.plan-3d{position:relative;margin-top:12px;flex:1;min-height:400px;border:1px solid var(--border);border-radius:12px;overflow:hidden;background:#070b0a}
+.plan-3d canvas{display:block;width:100%;height:100%}
+.plan-tooltip{position:absolute;pointer-events:none;padding:6px 10px;border-radius:8px;background:rgba(7,14,11,.92);border:1px solid rgba(53,220,135,.3);font-size:10px;color:#dce8e2;display:none;white-space:nowrap;z-index:5}
+@media(max-width:1100px){.plan-layout{grid-template-columns:1fr}}
+.house-overview{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(220px,1fr);gap:14px;margin-bottom:14px}
+.house-card{display:flex;flex-direction:column;padding:16px}
+.plan-3d-fill{width:100%;height:100%}
+.house-card .plan-3d{margin-top:12px;flex:1;min-height:340px}
+.house-cards{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;align-content:start}
+.house-mini{display:flex;flex-direction:column;gap:6px}
+.house-mini span{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.house-mini strong{font-size:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media(max-width:1100px){.house-overview{grid-template-columns:1fr}.house-cards{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:640px){.house-cards{grid-template-columns:repeat(2,1fr)}}
 .support-layout{display:grid;grid-template-columns:250px minmax(0,1fr) 290px;gap:12px}.tickets{display:grid;gap:6px;margin-top:12px}.ticket{border:1px solid var(--border);background:transparent;border-radius:9px;padding:10px;text-align:left;cursor:pointer}.ticket.active,.ticket:hover{background:rgba(32,215,178,.06);border-color:rgba(32,215,178,.2)}.ticket strong{font-size:10px;display:block}.ticket span{display:block;color:var(--muted);font-size:9px;margin-top:3px}.messages{height:420px;overflow:auto;padding:16px;display:grid;align-content:start;gap:10px}.message{max-width:78%;padding:10px;border-radius:10px;background:rgba(255,255,255,.04);border:1px solid var(--border)}.message.me{margin-left:auto;background:rgba(32,215,178,.08);border-color:rgba(32,215,178,.18)}.message strong{font-size:9px}.message p{font-size:10px;line-height:1.55;margin:4px 0}.message small{color:var(--faint);font-size:8px}.compose{display:grid;grid-template-columns:1fr auto;gap:8px;padding:12px;border-top:1px solid var(--border)}.contact{display:grid;gap:8px}.contact .meta strong{font-size:10px}
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.68);backdrop-filter:blur(7px);display:none;place-items:center;padding:18px;z-index:50}.modal.open{display:grid}.modal-card{width:min(760px,96vw);max-height:90vh;overflow:auto}.modal-title{font:800 18px var(--display);margin:0}.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:4px}.icon-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:7px}.icon-choice{border:1px solid var(--border);background:rgba(255,255,255,.025);border-radius:9px;padding:10px;cursor:pointer;font-size:20px}.icon-choice.active,.icon-choice:hover{border-color:rgba(32,215,178,.4);background:rgba(32,215,178,.08)}
 .toast{position:fixed;right:20px;bottom:20px;z-index:100;background:#0a111d;border:1px solid var(--border2);border-radius:10px;padding:11px 14px;box-shadow:0 15px 40px rgba(0,0,0,.4);font-size:11px;transform:translateY(20px);opacity:0;pointer-events:none;transition:.2s}.toast.show{opacity:1;transform:none}
@@ -46,7 +78,7 @@ $userName = htmlspecialchars($_SESSION['usuario'] ?? 'Usuário', ENT_QUOTES, 'UT
 @media(max-width:500px){.metrics,.sensor-grid,.report-summary{grid-template-columns:1fr}.title p{max-width:90vw}}
 
 /* =========================================================
-   AERIS GUARD — PRODUCT UI / VISUAL SYSTEM REFRESH
+   SADAG — PRODUCT UI / VISUAL SYSTEM REFRESH
    Design direction: calm density + editorial hierarchy +
    technical atmosphere. No functional selectors changed.
    ========================================================= */
@@ -109,7 +141,7 @@ body:after{
 .nav-icon{width:29px;height:29px;border-radius:9px;background:rgba(255,255,255,.025);border-color:rgba(255,255,255,.07);font-size:11px}.nav-button.active .nav-icon{background:rgba(53,220,135,.09);border-color:rgba(53,220,135,.2);color:#63e99a}
 .sidebar-bottom{gap:12px}.system-box{border-radius:13px;background:linear-gradient(145deg,rgba(53,220,135,.065),rgba(255,255,255,.018));padding:13px;border-color:rgba(53,220,135,.13)}.system-box small{font-size:8px;letter-spacing:.14em;text-transform:uppercase}.live-line{font-size:11px}.version{font-size:9px}
 .main{padding:28px 32px 44px;position:relative;min-width:0}
-.main:before{content:"AERIS / CONTROL SURFACE";position:absolute;top:15px;right:32px;color:#34423d;font:700 8px var(--mono);letter-spacing:.16em}
+.main:before{content:"SADAG / CONTROL SURFACE";position:absolute;top:15px;right:32px;color:#34423d;font:700 8px var(--mono);letter-spacing:.16em}
 .topbar{margin-bottom:18px;min-height:58px}.title{min-width:0}.title h1{font-size:clamp(26px,2.4vw,35px);letter-spacing:-.055em}.title p{font-size:12px;max-width:650px;line-height:1.7;color:#81918a}.toolbar{gap:9px}
 .btn{border-radius:10px;padding:10px 13px;background:rgba(255,255,255,.025);border-color:rgba(229,255,243,.105);font-size:10px;box-shadow:0 8px 24px rgba(0,0,0,.08)}.btn:hover{background:rgba(53,220,135,.06);border-color:rgba(53,220,135,.28);box-shadow:0 10px 28px rgba(0,0,0,.15)}.btn.primary{background:linear-gradient(135deg,#43e696,#20c777);box-shadow:0 12px 30px rgba(53,220,135,.12);color:#06120b}.btn.primary:hover{filter:saturate(1.05);box-shadow:0 16px 38px rgba(53,220,135,.2)}
 .card{background:linear-gradient(145deg,rgba(255,255,255,.038),rgba(255,255,255,.012) 55%,rgba(53,220,135,.018)),rgba(12,19,17,.92);border-color:rgba(229,255,243,.075);border-radius:var(--radius);box-shadow:0 24px 70px rgba(0,0,0,.16);backdrop-filter:blur(18px)}
@@ -168,27 +200,72 @@ body:after{
 .found-card .live-dot{width:7px;height:7px;border-radius:50%;background:#35dc87;box-shadow:0 0 0 4px rgba(53,220,135,.15);flex-shrink:0}
 .mini-connect{margin-top:10px;padding-top:10px;border-top:1px dashed rgba(53,220,135,.25);display:grid;gap:8px}
 [hidden]{display:none!important}
+/* Alerta visual de perigo — não depende de som, importante para
+   quem não ouve o buzzer/alarme (surdos) e reforça o aviso pra
+   todo mundo. Pisca uma borda vermelha na tela inteira. */
+body.critical-flash{animation:criticalFlash 1s ease-in-out infinite}
+@keyframes criticalFlash{0%,100%{box-shadow:inset 0 0 0 0 rgba(255,87,87,0)}50%{box-shadow:inset 0 0 0 8px rgba(255,87,87,.6)}}
+@media(prefers-reduced-motion:reduce){body.critical-flash{animation:none;box-shadow:inset 0 0 0 8px rgba(255,87,87,.6)}}
 @media(prefers-reduced-motion:reduce){.spinner{animation:none;border-top-color:rgba(53,220,135,.18)}}
+.chat-shell{display:grid;grid-template-columns:230px 1fr;gap:0;height:min(720px,78vh);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;background:var(--panel2);max-width:1600px;margin:0 auto}
+.chat-sidebar{border-right:1px solid var(--border);padding:10px;overflow-y:auto;display:flex;flex-direction:column;gap:3px}
+.chat-convo-sep{margin:12px 4px 4px;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--faint)}
+.chat-convo{display:flex;align-items:center;gap:9px;width:100%;text-align:left;background:transparent;border:1px solid transparent;border-radius:10px;padding:8px 9px;cursor:pointer;color:var(--text)}
+.chat-convo:hover{background:rgba(255,255,255,.04)}
+.chat-convo.active{background:rgba(32,215,178,.12);border-color:rgba(32,215,178,.28)}
+.convo-avatar{width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px}
+.convo-info{display:flex;flex-direction:column;min-width:0}
+.convo-info strong{font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.convo-info small{font-size:10.5px;color:var(--muted)}
+.chat-main{display:flex;flex-direction:column;min-width:0}
+.chat-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 18px;border-bottom:1px solid var(--border)}
+.chat-head strong{font-size:14.5px;display:block}
+.chat-head-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.chat-body{flex:1;overflow-y:auto;padding:28px 30px}
+.assist-messages,.messages{display:flex;flex-direction:column;gap:24px;max-width:820px;margin:0 auto}
+.chat-bubble{display:flex;gap:11px;max-width:74%}
+.chat-bubble.me,.chat-bubble.team{margin-left:auto;flex-direction:row-reverse}
+.bubble-avatar{width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px;margin-top:2px}
+.bubble-body{background:rgba(255,255,255,.045);border:1px solid var(--border);border-radius:16px;padding:12px 16px;font-size:13.5px;line-height:1.65;white-space:pre-wrap}
+.chat-bubble.me .bubble-body,.chat-bubble.team .bubble-body{background:rgba(32,215,178,.13);border-color:rgba(32,215,178,.28)}
+.bubble-body small{display:block;color:var(--muted);font-size:10px;margin-top:6px}
+.chat-bubble.typing .bubble-body{padding:11px 15px}
+.thinking-text{background:linear-gradient(90deg,var(--muted) 0%,var(--text) 50%,var(--muted) 100%);background-size:200% auto;background-clip:text;-webkit-background-clip:text;color:transparent;animation:thinkingShimmer 1.6s linear infinite;font-size:13px}
+@keyframes thinkingShimmer{0%{background-position:200% center}100%{background-position:-200% center}}
+.chat-bubble.arrived .bubble-body{animation:arrivedFlash 2s ease-out}
+@keyframes arrivedFlash{0%{box-shadow:0 0 0 2px rgba(32,215,178,.55)}100%{box-shadow:0 0 0 0 rgba(32,215,178,0)}}
+@media(prefers-reduced-motion:reduce){.thinking-text{animation:none;color:var(--muted)}.chat-bubble.arrived .bubble-body{animation:none}}
+.assist-suggestions{display:flex;flex-wrap:wrap;gap:8px;margin:20px auto 0;max-width:820px}
+.assist-suggestions button{background:rgba(255,255,255,.04);border:1px solid var(--border);color:var(--text);border-radius:999px;padding:6px 12px;font-size:12px;cursor:pointer}
+.assist-suggestions button:hover{background:rgba(255,255,255,.08)}
+.chat-main .compose{border-top:1px solid var(--border);padding:12px 16px;margin:0}
+@media(max-width:760px){.chat-shell{grid-template-columns:1fr;height:auto}.chat-sidebar{border-right:0;border-bottom:1px solid var(--border);flex-direction:row;flex-wrap:wrap;max-height:160px}.chat-body{max-height:50vh}}
+.notice.notice-clickable{cursor:pointer}
+.notice.notice-clickable:hover{background:rgba(255,255,255,.04)}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 </head>
 <body>
 <div class="app">
+<button type="button" id="sidebarToggle" class="sidebar-toggle" title="Mostrar/ocultar menu" aria-label="Mostrar/ocultar menu">☰</button>
 <aside class="sidebar">
-  <a class="brand" href="#dashboard" data-view="dashboard"><span class="brand-mark">A</span><span><small>Enterprise IoT</small><strong>Aeris Guard</strong></span></a>
+  <a class="brand" href="#dashboard" data-view="dashboard"><span class="brand-mark">S</span><span><small>Enterprise IoT</small><strong>Sadag</strong></span></a>
   <nav class="nav">
     <button class="nav-button active" data-view="dashboard"><span class="nav-icon">▦</span><span data-i18n="dashboard">Dashboard</span></button>
     <button class="nav-button" data-view="sensores"><span class="nav-icon">◉</span><span data-i18n="sensors">Sensores</span></button>
+    <button class="nav-button" data-view="planta"><span class="nav-icon">▦</span><span data-i18n="floorplan">Planta 3D</span></button>
     <button class="nav-button" data-view="historico"><span class="nav-icon">≋</span><span data-i18n="history">Histórico</span></button>
     <button class="nav-button" data-view="relatorios"><span class="nav-icon">▤</span><span data-i18n="reports">Relatórios</span></button>
     <button class="nav-button" data-view="configuracoes"><span class="nav-icon">⚙</span><span data-i18n="settings">Configurações</span></button>
     <button class="nav-button" data-view="suporte"><span class="nav-icon">?</span><span data-i18n="support">Suporte</span></button>
   </nav>
-  <div class="sidebar-bottom"><div class="system-box"><small>Sistema</small><div class="live-line"><i class="dot"></i><strong id="systemText">Aguardando dispositivo</strong></div><div class="version">Aeris Guard · 2.0</div></div></div>
+  <div class="sidebar-bottom"><div class="system-box"><small>Sistema</small><div class="live-line"><i class="dot"></i><strong id="systemText">Aguardando dispositivo</strong></div><div class="version">Sadag · 2.0</div></div></div>
 </aside>
 <main class="main">
   <section class="view active" id="view-dashboard">
     <div class="topbar">
-      <div class="title"><h1>Bem-vindo, <?= $userName ?>.</h1><p>Centro de controle do Aeris Guard. Os dados exibidos abaixo vêm do banco e do ESP32.</p></div>
+      <div class="title"><h1>Bem-vindo, <?= $userName ?>.</h1><p>Centro de controle do Sadag. Os dados exibidos abaixo vêm do banco e do ESP32.</p></div>
       <div class="toolbar">
         <div class="notification"><button class="bell" id="bellButton" title="Notificações">🔔</button><span class="badge" id="notificationBadge" hidden>0</span><div class="card notification-panel" id="notificationPanel"><div class="card-head"><strong class="card-title">Notificações</strong><button class="btn small" id="readNotifications">Marcar como lidas</button></div><div id="notificationList" style="margin-top:8px"></div></div></div>
         <div class="profile"><button class="avatar" id="profileAvatar">👤</button><div class="profile-name"><strong id="profileName">Usuário</strong><span id="profileEmail">--</span></div><div class="card profile-menu" id="profileMenu"><button id="openProfile">👤 Meu perfil</button><button data-view="configuracoes">⚙ Configurações</button><button id="logoutButton">↪ Sair</button></div></div>
@@ -205,12 +282,21 @@ body:after{
       <div class="aeris-overview" aria-label="Resumo do sistema">
         <div class="overview-main">
           <div class="overview-kicker"><span class="live-dot"></span> MONITORAMENTO EM TEMPO REAL <span class="sync-age" id="syncAge">sincronizando...</span></div>
-          <h2>Aeris Guard <em>ao vivo</em></h2>
+          <h2>Sadag <em>ao vivo</em></h2>
         </div>
-        <div class="overview-facts">
-          <div class="overview-fact"><span>Ambiente</span><strong id="overviewLocation">--</strong></div>
-          <div class="overview-fact"><span>Dispositivo</span><strong id="overviewDevice">--</strong></div>
-          <div class="overview-fact"><span>Conexão</span><strong id="overviewNetwork">--</strong></div>
+      </div>
+      <div class="house-overview">
+        <article class="card house-card">
+          <div class="card-head"><div><h2 class="card-title">Sua casa em tempo real</h2><p class="card-sub">Passe o mouse num dispositivo pra ver o status; clique pra selecionar.</p></div></div>
+          <div class="plan-3d" id="dashboard3dSlot"><div class="plan-3d-fill" id="plan3dHost"></div></div>
+        </article>
+        <div class="house-cards">
+          <article class="card pad house-mini"><span>Dispositivo</span><strong id="houseDeviceName">--</strong></article>
+          <article class="card pad house-mini"><span>Ambiente</span><strong id="houseLocation">--</strong></article>
+          <article class="card pad house-mini"><span>PPM agora</span><strong id="houseCurrentPpm">--</strong></article>
+          <article class="card pad house-mini"><span>Status</span><strong id="houseStatus">--</strong></article>
+          <article class="card pad house-mini"><span>Conexão</span><strong id="houseWifi">--</strong></article>
+          <article class="card pad house-mini"><span>Última leitura</span><strong id="houseLastSeen">--</strong></article>
         </div>
       </div>
       <div class="dashboard-grid">
@@ -227,8 +313,7 @@ body:after{
         </div>
         <div class="stack">
           <article class="card chart-card"><div class="card-head chart-head"><div><h2 class="card-title">Análise de concentração de GLP (ppm)</h2><p class="card-sub">Leituras reais gravadas pelo ESP32.</p></div><div class="chart-actions"><button class="btn small range active" data-range="today">Hoje</button><button class="btn small range" data-range="24h">24h</button><button class="btn small range" data-range="all">Tudo</button></div></div><div class="chart-wrap" id="chartWrap"><svg id="mainChart" viewBox="0 0 920 310" preserveAspectRatio="none"><g id="chartGrid"></g><path id="chartArea" fill="rgba(32,215,178,.10)"></path><path id="chartLine" fill="none" stroke="#20d7b2" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path><g id="chartPoints"></g><line id="hoverLine" y1="18" y2="280" stroke="rgba(255,255,255,.2)" opacity="0"/><circle id="hoverDot" r="5" fill="#20d7b2" stroke="#fff" stroke-width="2" opacity="0"/></svg><div class="chart-tip" id="chartTip"></div></div><div class="summary"><div class="summary-cell"><span>Mínimo</span><strong id="statMin">--</strong> <small>ppm</small></div><div class="summary-cell"><span>Média</span><strong id="statAvg">--</strong> <small>ppm</small></div><div class="summary-cell"><span>Máximo</span><strong id="statMax">--</strong> <small>ppm</small></div><div class="summary-cell"><span>Última leitura</span><strong id="statLast">--</strong> <small>ppm</small></div></div></article>
-          <div class="metrics"><article class="card metric"><div class="metric-top"><div class="metric-icon">PPM</div><div><span>Média</span><strong id="metricAvg">--</strong><small>hoje</small></div></div><div class="progress"><i id="avgProgress" style="width:0"></i></div></article><article class="card metric"><div class="metric-top"><div class="metric-icon">Wi</div><div><span>Comunicação</span><strong id="metricWifi">--</strong><small>rede Wi-Fi</small></div></div><div class="progress"><i id="wifiProgress" style="width:0"></i></div></article><article class="card metric"><div class="metric-top"><div class="metric-icon">SN</div><div><span>Dispositivos</span><strong id="metricDevices">0/0</strong><small>online</small></div></div><div class="progress"><i id="deviceProgress" style="width:0"></i></div></article><article class="card metric"><div class="metric-top"><div class="metric-icon">DB</div><div><span>Banco</span><strong id="lastUpdate">--</strong><small>última sincronização</small></div></div><div class="progress"><i style="width:100%"></i></div></article></div>
-          <article class="card pad"><div class="card-head"><div><h2 class="card-title">Dispositivos instalados</h2><p class="card-sub">Selecione um dispositivo para fundir seus dados ao dashboard.</p></div><button class="btn small" data-view="sensores">Gerenciar</button></div><div class="sensor-grid" id="dashboardSensors" style="margin-top:12px"></div></article>
+          <div class="metrics metrics-2"><article class="card metric"><div class="metric-top"><div class="metric-icon">PPM</div><div><span>Média</span><strong id="metricAvg">--</strong><small>hoje</small></div></div><div class="progress"><i id="avgProgress" style="width:0"></i></div></article><article class="card metric"><div class="metric-top"><div class="metric-icon">Wi</div><div><span>Comunicação</span><strong id="metricWifi">--</strong><small>rede Wi-Fi</small></div></div><div class="progress"><i id="wifiProgress" style="width:0"></i></div></article></div>
         </div>
       </div>
     </div>
@@ -236,6 +321,22 @@ body:after{
   </section>
 
   <section class="view" id="view-sensores"><div class="topbar"><div class="title"><h1>Sensores</h1><p>Descubra ESP32 pela presença Wi-Fi, vincule o dispositivo e defina o ambiente instalado.</p></div><div class="toolbar"><button class="btn primary" id="discoverButton">⌁ Procurar na rede</button><button class="btn" id="newLocationButton">＋ Novo ambiente</button></div></div><div class="card pad" style="margin-bottom:12px"><div class="card-head"><div><h2 class="card-title">Dispositivos da sua conta</h2><p class="card-sub">Tudo aqui é persistido no MySQL.</p></div><span class="pill" id="deviceCountPill">0 dispositivos</span></div></div><div class="card table-card"><table class="table"><thead><tr><th>Nome</th><th>ESP32</th><th>Ambiente</th><th>Sensor</th><th>Status</th><th>Última leitura</th><th>Ações</th></tr></thead><tbody id="sensorTable"></tbody></table></div></section>
+
+  <section class="view" id="view-planta">
+    <div class="topbar"><div class="title"><h1>Planta 3D</h1><p>Desenhe os cômodos da sua casa (arraste para mover, puxe o canto para redimensionar) e veja os dispositivos na posição real, em 3D.</p></div><div class="toolbar"><button class="btn" id="plantaNewRoom">＋ Novo ambiente</button></div></div>
+    <div class="plan-layout">
+      <article class="card pad plan-card">
+        <div class="card-head"><h2 class="card-title">Editor da planta (visto de cima)</h2><span class="card-sub">1 quadrado = 1 metro</span></div>
+        <div class="plan-editor" id="planEditor">
+          <svg id="planSvg" width="100%" height="100%"></svg>
+        </div>
+      </article>
+      <article class="card pad plan-card">
+        <div class="card-head"><h2 class="card-title">Visualização 3D</h2><span class="card-sub">Arraste para girar · role para aproximar</span></div>
+        <div class="plan-3d" id="planta3dSlot"></div>
+      </article>
+    </div>
+  </section>
 
   <section class="view" id="view-historico"><div class="topbar"><div class="title"><h1>Histórico</h1><p>Cada leitura recebida do ESP32 permanece registrada no banco de dados.</p></div><div class="toolbar"><button class="btn" id="historyExport">Exportar CSV</button></div></div><div class="filters"><input class="input" id="historySearch" placeholder="Pesquisar dispositivo ou evento"><select class="input" id="historyStatus"><option value="">Todos os status</option><option value="normal">Normal</option><option value="atencao">Atenção</option><option value="perigo">Perigo</option></select><input class="input" id="historyMin" type="number" placeholder="PPM mínimo"><input class="input" id="historyMax" type="number" placeholder="PPM máximo"></div><div class="card table-card"><table class="table"><thead><tr><th>Data/Hora</th><th>Dispositivo</th><th>Ambiente</th><th>PPM</th><th>Status</th><th>RSSI</th></tr></thead><tbody id="historyTable"></tbody></table><div class="pagination"><span id="historyCount">0 registros</span><div><button class="btn small" id="historyPrev">Anterior</button> <span id="historyPage">1/1</span> <button class="btn small" id="historyNext">Próxima</button></div></div></div></section>
 
@@ -249,17 +350,38 @@ body:after{
     <div class="settings-pane" id="settings-auditoria"><div class="card table-card"><table class="table"><thead><tr><th>Data</th><th>Ação</th><th>Entidade</th><th>Detalhes</th></tr></thead><tbody id="auditTable"></tbody></table></div></div>
   </article></div></section>
 
-  <section class="view" id="view-suporte"><div class="topbar"><div class="title"><h1>Suporte</h1><p>Abra um chamado e envie mensagens para a equipe de desenvolvimento. Tudo fica registrado.</p></div><div class="toolbar"><button class="btn primary" id="newTicket">＋ Novo chamado</button></div></div><div class="support-layout"><aside class="card pad"><h2 class="card-title">Chamados</h2><div class="tickets" id="ticketList"></div></aside><article class="card" style="overflow:hidden"><div class="pad" style="border-bottom:1px solid var(--border)"><div class="card-head"><div><h2 class="card-title" id="ticketTitle">Nenhum chamado</h2><p class="card-sub" id="ticketStatus">Selecione um chamado.</p></div><span class="pill">Email + banco</span></div></div><div class="messages" id="messages"></div><form class="compose" id="messageForm"><input class="input" id="messageInput" placeholder="Digite sua mensagem..." required><button class="btn primary">Enviar</button></form></article><aside class="card pad"><h2 class="card-title">Canal de desenvolvimento</h2><div class="contact" style="margin-top:12px"><div class="meta"><span>Registro</span><strong>MySQL · support_tickets</strong></div><div class="meta"><span>Mensagens</span><strong>MySQL · support_messages</strong></div><div class="meta"><span>Email</span><strong>Configurado no backend</strong></div><div class="meta"><span>Dispositivo ativo</span><strong id="supportDevice">--</strong></div></div></aside></div></section>
+  <section class="view" id="view-suporte"><div class="topbar"><div class="title"><h1>Suporte</h1><p>O Sadag Assist está presente em toda conversa. Peça para falar com a equipe quando precisar.</p></div><div class="toolbar"><a class="btn" id="teamCenterLink" href="central-equipe.php" hidden>🛠 Central da equipe</a><button class="btn primary" id="newConvo">＋ Nova conversa</button></div></div>
+  <div class="chat-shell">
+    <aside class="chat-sidebar" id="convoList"></aside>
+    <article class="chat-main">
+      <div class="chat-head">
+        <div><strong id="chatHeadTitle">Nova conversa</strong><span class="card-sub" id="chatHeadSub">Sadag Assist</span></div>
+        <div class="chat-head-actions">
+          <button class="btn small" type="button" id="escalateButton">💬 Falar com a equipe</button>
+          <a class="btn small" id="replyByEmail" href="#" hidden>✉ Responder por email</a>
+          <button class="btn small" id="closeTicket" hidden>Encerrar</button>
+        </div>
+      </div>
+      <div class="chat-body" id="chatBody">
+        <div class="assist-suggestions" id="assistSuggestions">
+          <button type="button" data-suggest="Meu dispositivo está offline">Meu dispositivo está offline</button>
+          <button type="button" data-suggest="Como funciona o sensor?">Como funciona o sensor?</button>
+          <button type="button" data-suggest="Meu painel não mostra dados">Meu painel não mostra dados</button>
+          <button type="button" data-suggest="Como conectar o dispositivo?">Como conectar o dispositivo?</button>
+        </div>
+      </div>
+      <form class="compose" id="chatForm"><input class="input" id="chatInput" placeholder="Digite sua mensagem..." maxlength="2000" required><button class="btn primary">Enviar</button></form>
+    </article>
+  </div>
+  </section>
 </main></div>
 
 <div class="modal" id="connectModal"><article class="card modal-card pad"><div class="card-head"><div><h2 class="modal-title">Conectar dispositivo Wi-Fi</h2><p class="card-sub">Busca ESP32 que anunciaram presença nos últimos 30s <b>e</b> faz uma varredura ao vivo na rede local.</p></div><button class="btn small" data-close="connectModal">✕</button></div><div class="toolbar" style="justify-content:flex-start;margin:14px 0"><button class="btn primary" id="scanNetwork">⌁ Buscar na rede Wi-Fi</button></div><div id="discoveredList" class="stack"></div><form id="connectForm" class="form-grid" style="margin-top:15px"><div class="field"><label>Nome no painel</label><input class="input" id="connectName" required placeholder="Sensor Cozinha"></div><div class="field"><label>ESP32 ID</label><input class="input" id="connectEsp" required></div><div class="field"><label>Código do fabricante</label><input class="input" id="connectCode" required placeholder="AERIS-MQ6-001"></div><div class="field"><label>Ambiente instalado</label><select class="input" id="connectLocation"></select></div><div class="field full"><label>Descrição</label><input class="input" id="connectDescription" placeholder="Ex.: próximo ao fogão"></div><div class="modal-actions full"><button class="btn" type="button" data-close="connectModal">Cancelar</button><button class="btn primary">Cadastrar dispositivo novo</button></div></form><div class="form-divider" style="margin:18px 0;border-top:1px solid var(--border)"></div><details><summary style="cursor:pointer;color:var(--muted);font-size:11px;font-weight:700">Já tem esse dispositivo cadastrado por outra conta?</summary><p class="card-sub" style="margin:8px 0">Se você sabe o ESP32 ID e a API key (mostrada uma vez no cadastro original), pode acompanhar o mesmo dispositivo físico pela sua conta, sem duplicar o cadastro.</p><form id="joinForm" class="form-grid"><div class="field"><label>ESP32 ID</label><input class="input" id="joinEsp" required placeholder="ESP32-MQ6-001"></div><div class="field"><label>API key do dispositivo</label><input class="input" id="joinApiKey" required></div><div class="modal-actions full"><button class="btn primary" type="submit">Vincular à minha conta</button></div></form></details></article></div>
 <div class="modal" id="locationModal"><article class="card modal-card pad"><div class="card-head"><div><h2 class="modal-title">Novo ambiente</h2><p class="card-sub">O local também será registrado no MySQL.</p></div><button class="btn small" data-close="locationModal">✕</button></div><form id="locationForm" class="form-grid" style="margin-top:15px"><div class="field full"><label>Nome</label><input class="input" id="locationName" required placeholder="Cozinha"></div><div class="field"><label>Setor</label><input class="input" id="locationSector"></div><div class="field"><label>Andar</label><input class="input" id="locationFloor"></div><div class="field full"><label>Descrição</label><textarea class="input" id="locationDescription"></textarea></div><div class="modal-actions full"><button class="btn" type="button" data-close="locationModal">Cancelar</button><button class="btn primary">Salvar ambiente</button></div></form></article></div>
-<div class="modal" id="profileModal"><article class="card modal-card pad"><div class="card-head"><div><h2 class="modal-title">Meu perfil</h2><p class="card-sub">O ícone escolhido fica salvo no campo avatar do usuário.</p></div><button class="btn small" data-close="profileModal">✕</button></div><form id="profileForm" class="form-grid" style="margin-top:15px"><div class="field"><label>Nome</label><input class="input" id="profileFormName"></div><div class="field"><label>Email</label><input class="input" id="profileFormEmail" disabled></div><div class="field"><label>Telefone</label><input class="input" id="profilePhone"></div><div class="field"><label>Nome exibido</label><input class="input" id="profileDisplay"></div><div class="field full"><label>Ícone do perfil</label><div class="icon-grid" id="iconGrid"></div></div><div class="field full"><label>Biografia</label><textarea class="input" id="profileBio"></textarea></div><div class="modal-actions full"><button class="btn" type="button" data-close="profileModal">Cancelar</button><button class="btn primary">Salvar perfil</button></div></form></article></div>
-<div class="modal" id="ticketModal"><article class="card modal-card pad"><div class="card-head"><div><h2 class="modal-title">Novo chamado</h2><p class="card-sub">O chamado será salvo e, se o servidor de email estiver configurado, enviado à equipe.</p></div><button class="btn small" data-close="ticketModal">✕</button></div><form id="ticketForm" class="form-grid" style="margin-top:15px"><div class="field full"><label>Assunto</label><input class="input" id="ticketSubject" required></div><div class="field"><label>Categoria</label><select class="input" id="ticketCategory"><option>Problema técnico</option><option>Falha no sensor</option><option>Dúvida</option><option>Sugestão</option><option>Configuração</option></select></div><div class="field"><label>Dispositivo</label><select class="input" id="ticketDevice"><option value="">Nenhum</option></select></div><div class="field full"><label>Mensagem</label><textarea class="input" id="ticketMessage" required></textarea></div><div class="modal-actions full"><button class="btn" type="button" data-close="ticketModal">Cancelar</button><button class="btn primary">Abrir chamado</button></div></form></article></div>
-<div class="toast" id="toast"></div>
+<div class="modal" id="profileModal"><article class="card modal-card pad"><div class="card-head"><div><h2 class="modal-title">Meu perfil</h2><p class="card-sub">O ícone escolhido fica salvo no campo avatar do usuário.</p></div><button class="btn small" data-close="profileModal">✕</button></div><form id="profileForm" class="form-grid" style="margin-top:15px"><div class="field"><label>Nome</label><input class="input" id="profileFormName"></div><div class="field"><label>Email</label><input class="input" id="profileFormEmail" disabled></div><div class="field"><label>Telefone</label><input class="input" id="profilePhone"></div><div class="field"><label>Nome exibido</label><input class="input" id="profileDisplay"></div><div class="field full"><label>Ícone do perfil</label><div class="icon-grid" id="iconGrid"></div></div><div class="field full"><label>Biografia</label><textarea class="input" id="profileBio"></textarea></div><div class="modal-actions full"><button class="btn" type="button" data-close="profileModal">Cancelar</button><button class="btn primary">Salvar perfil</button></div></form></article></div><div class="toast" id="toast"></div>
 <script>
 const API='../../api';
-const state={devices:[],locations:[],selected:null,readings:[],history:[],range:'today',historyPage:1,historyPerPage:20,tickets:[],ticketId:null,notifications:[],profile:null,settings:null,selectedIcon:'👤',lastDataAt:null};
+const state={devices:[],locations:[],selected:null,readings:[],history:[],range:'today',historyPage:1,historyPerPage:20,tickets:[],ticketId:null,lastMsgId:0,supportPoll:null,syncing:false,messages:[],thinking:false,notifications:[],profile:null,settings:null,selectedIcon:'👤',lastDataAt:null};
 const icons=['👤','🛡️','🧪','🔬','🏠','🏭','🛰️','⚙️','🟢','🔵','🟣','⭐','🧰','💡','📡','🧠'];
 const fallbackThresholds={safe:400,alert:550,critical:700};
 const I18N={
@@ -277,31 +399,58 @@ function selectedDevice(){return state.devices.find(d=>Number(d.id)===Number(sta
 function locName(id){return state.locations.find(l=>Number(l.id)===Number(id))?.name||'Sem ambiente'}
 function thresholds(){const s=state.settings?.settings;return{safety:Number(s?.safe_ppm??fallbackThresholds.safe),alert:Number(s?.alert_ppm??fallbackThresholds.alert),critical:Number(s?.critical_ppm??fallbackThresholds.critical)}}
 function statusFor(v){const t=thresholds();if(v>=t.critical)return{key:'perigo',label:'Perigo',msg:'Concentração crítica detectada',color:'var(--red)',icon:'!'};if(v>=t.alert)return{key:'atencao',label:'Atenção',msg:'Concentração acima do nível de alerta',color:'var(--yellow)',icon:'!'};return{key:'normal',label:'Seguro',msg:'Nível dentro da faixa configurada',color:'var(--green)',icon:'✓'}}
-function activateView(name){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===`view-${name}`));document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===name));history.replaceState(null,'',`#${name}`);if(name==='historico')renderHistory();if(name==='relatorios')renderReports();if(name==='suporte')loadTickets();if(name==='configuracoes')loadSettings();}
+function activateView(name){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===`view-${name}`));document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===name));history.replaceState(null,'',`#${name}`);if(name!=='suporte')stopSupportPoll();if(name==='historico')renderHistory();if(name==='relatorios')renderReports();if(name==='suporte'){loadTickets();updateChatHeader();renderChat();if(state.ticketId)startSupportPoll();}if(name==='configuracoes')loadSettings();if(name==='dashboard'){initPlan3D();moveHouseTo('dashboard3dSlot');renderPlan3D();}if(name==='planta'){initPlan3D();moveHouseTo('planta3dSlot');renderPlan2D();renderPlan3D();}}
+function moveHouseTo(slotId){const host=document.getElementById('plan3dHost'),slot=document.getElementById(slotId);if(!host||!slot)return;if(host.parentElement!==slot)slot.appendChild(host);if(plan3d)setTimeout(()=>plan3d.resize(),50)}
 function applyLanguage(lang){const map=I18N[lang]||I18N['pt-BR'];document.querySelectorAll('[data-i18n]').forEach(e=>e.textContent=map[e.dataset.i18n]||e.textContent);document.documentElement.lang=lang==='en'?'en':lang==='es'?'es':'pt-BR'}
-async function loadProfile(){const d=await api('app.php?action=profile');state.profile=d.profile;document.getElementById('profileName').textContent=d.profile.display_name||d.profile.nome||'Usuário';document.getElementById('profileEmail').textContent=d.profile.email||'--';document.getElementById('profileAvatar').textContent=d.profile.avatar||'👤';document.getElementById('profileFormName').value=d.profile.nome||'';document.getElementById('profileFormEmail').value=d.profile.email||'';document.getElementById('profileDisplay').value=d.profile.display_name||'';document.getElementById('profilePhone').value=d.profile.phone||'';document.getElementById('profileBio').value=d.profile.biography||'';state.selectedIcon=d.profile.avatar||'👤';renderIcons()}
+async function loadProfile(){const d=await api('app.php?action=profile');state.profile=d.profile;document.getElementById('profileName').textContent=d.profile.display_name||d.profile.nome||'Usuário';document.getElementById('profileEmail').textContent=d.profile.email||'--';document.getElementById('profileAvatar').textContent=d.profile.avatar||'👤';document.getElementById('profileFormName').value=d.profile.nome||'';document.getElementById('profileFormEmail').value=d.profile.email||'';document.getElementById('profileDisplay').value=d.profile.display_name||'';document.getElementById('profilePhone').value=d.profile.phone||'';document.getElementById('profileBio').value=d.profile.biography||'';state.selectedIcon=d.profile.avatar||'👤';renderIcons();document.getElementById('teamCenterLink').hidden=!Number(d.profile.is_admin)}
 function renderIcons(){document.getElementById('iconGrid').innerHTML=icons.map(i=>`<button type="button" class="icon-choice ${state.selectedIcon===i?'active':''}" data-icon="${i}">${i}</button>`).join('')}
 async function loadSettings(){const d=await api('app.php?action=settings');state.settings=d;const s=d.settings,n=d.notifications;document.getElementById('language').value=s.language||'pt-BR';document.getElementById('safePpm').value=s.safe_ppm;document.getElementById('alertPpm').value=s.alert_ppm;document.getElementById('criticalPpm').value=s.critical_ppm;document.getElementById('readingInterval').value=s.reading_interval;['email','security','system','project','alerts'].forEach(k=>document.getElementById(`notify${k[0].toUpperCase()+k.slice(1)}`).checked=Number(n[`notify_${k}`])===1);applyLanguage(s.language||'pt-BR');renderGauge(state.readings.at(-1)?.value??0)}
 async function saveSettings(){const p={language:document.getElementById('language').value,safe_ppm:Number(document.getElementById('safePpm').value),alert_ppm:Number(document.getElementById('alertPpm').value),critical_ppm:Number(document.getElementById('criticalPpm').value),reading_interval:Number(document.getElementById('readingInterval').value),notify_email:document.getElementById('notifyEmail').checked,notify_security:document.getElementById('notifySecurity').checked,notify_system:document.getElementById('notifySystem').checked,notify_project:document.getElementById('notifyProject').checked,notify_alerts:document.getElementById('notifyAlerts').checked};try{await api('app.php?action=save_settings',{method:'POST',body:JSON.stringify(p)});await loadSettings();toast('Configurações salvas no MySQL.')}catch(e){toast(e.message)}}
 async function loadLocations(){const d=await api('locations.php');state.locations=d.locations||[];fillLocations()}
-function fillLocations(){const opts='<option value="">Sem ambiente</option>'+state.locations.map(l=>`<option value="${l.id}">${esc(l.name)}${l.sector?' — '+esc(l.sector):''}</option>`).join('');document.getElementById('connectLocation').innerHTML=opts;document.getElementById('ticketDevice').innerHTML='<option value="">Nenhum</option>'+state.devices.map(d=>`<option value="${d.id}">${esc(d.name)}</option>`).join('')}
+function fillLocations(){const opts='<option value="">Sem ambiente</option>'+state.locations.map(l=>`<option value="${l.id}">${esc(l.name)}${l.sector?' — '+esc(l.sector):''}</option>`).join('');document.getElementById('connectLocation').innerHTML=opts}
 async function loadDevices(){const d=await api('devices.php');state.devices=d.devices||[];if(!state.selected&&state.devices.length)state.selected=state.devices[0].id;renderDeviceSelector();renderSensors();updateDeviceState()}
-function renderDeviceSelector(){const s=document.getElementById('deviceSelector');s.innerHTML=state.devices.length?state.devices.map(d=>`<option value="${d.id}">${esc(d.name)} — ${esc(d.esp32_id)}</option>`).join(''):'<option value="">Nenhum</option>';if(state.selected)s.value=state.selected;document.getElementById('metricDevices').textContent=`${state.devices.filter(d=>d.status==='online').length}/${state.devices.length}`;document.getElementById('deviceProgress').style.width=state.devices.length?`${state.devices.filter(d=>d.status==='online').length/state.devices.length*100}%`:'0%'}
-async function loadData(){const d=selectedDevice();if(!d){state.readings=[];state.history=[];return}const x=await api(`data.php?device_id=${encodeURIComponent(d.id)}&limit=1000`);state.readings=(x.history||[]).slice().reverse().map(r=>({time:new Date(String(r.created_at).replace(' ','T')),value:Number(r.ppm),status:r.reading_status,rssi:r.wifi_rssi}));state.history=(x.history||[]).map(r=>({...r,device:d.name,location:locName(d.location_id)}));d.latest_ppm=x.latest?.ppm??null;d.stats=x.stats||{};d.status=x.device?.status||d.status;d.wifi_status=x.device?.wifi_status||d.wifi_status;state.lastDataAt=Date.now();updateDashboard()}
+function renderDeviceSelector(){const s=document.getElementById('deviceSelector');s.innerHTML=state.devices.length?state.devices.map(d=>`<option value="${d.id}">${esc(d.name)} — ${esc(d.esp32_id)}</option>`).join(''):'<option value="">Nenhum</option>';if(state.selected)s.value=state.selected}
+async function loadData(){const d=selectedDevice();if(!d){state.readings=[];state.history=[];disconnectStream();return}const x=await api(`data.php?device_id=${encodeURIComponent(d.id)}&limit=1000`);state.readings=(x.history||[]).slice().reverse().map(r=>({time:new Date(String(r.created_at).replace(' ','T')),value:Number(r.ppm),status:r.reading_status,rssi:r.wifi_rssi}));state.history=(x.history||[]).map(r=>({...r,device:d.name,location:locName(d.location_id)}));d.latest_ppm=x.latest?.ppm??null;d.stats=x.stats||{};d.status=x.device?.status||d.status;d.wifi_status=x.device?.wifi_status||d.wifi_status;state.lastDataAt=Date.now();updateDashboard();connectStream(d.id)}
+
+let sseSource=null,sseDeviceId=null;
+function disconnectStream(){if(sseSource){sseSource.close();sseSource=null}sseDeviceId=null}
+function connectStream(deviceId){
+  if(sseDeviceId===deviceId&&sseSource&&sseSource.readyState!==2)return; // ja conectado e vivo
+  disconnectStream();
+  sseDeviceId=deviceId;
+  sseSource=new EventSource(`${API}/stream.php?device_id=${encodeURIComponent(deviceId)}`);
+  sseSource.addEventListener('reading',e=>{
+    let r;try{r=JSON.parse(e.data)}catch(err){return}
+    const d=selectedDevice();
+    if(!d||Number(d.id)!==Number(deviceId))return;
+    const t=new Date(String(r.created_at).replace(' ','T'));
+    const last=state.readings.at(-1);
+    if(!last||last.time.getTime()!==t.getTime()){
+      state.readings.push({time:t,value:Number(r.ppm),status:r.reading_status,rssi:r.wifi_rssi});
+      if(state.readings.length>2000)state.readings.shift();
+      state.history.unshift({id:r.id,device_id:deviceId,ppm:r.ppm,raw_adc:r.raw_adc,reading_status:r.reading_status,wifi_rssi:r.wifi_rssi,created_at:r.created_at,device:d.name,location:locName(d.location_id)});
+    }
+    d.latest_ppm=r.ppm;
+    d.status=r.device_status;
+    state.lastDataAt=Date.now();
+    updateDashboard();
+  });
+  sseSource.onerror=()=>{/* EventSource tenta reconectar sozinho */};
+}
 function tickSyncAge(){const el=document.getElementById('syncAge');if(!el)return;if(!state.lastDataAt){el.textContent='sincronizando...';return}const s=Math.max(0,Math.round((Date.now()-state.lastDataAt)/1000));el.textContent=s<=1?'sincronizado agora':`sincronizado há ${s}s`;el.style.color=s<=3?'#8fe8b6':'#e8c98f'}
-async function refresh(){try{await Promise.all([loadLocations(),loadSettings(),loadProfile(),loadDevices()]);await loadData();await loadNotifications();await loadAudit();await loadTickets();updateHome();document.getElementById('lastUpdate').textContent=time(new Date());}catch(e){toast(e.message)}}
+async function refresh(){try{await Promise.all([loadLocations(),loadSettings(),loadProfile(),loadDevices()]);await loadData();await loadNotifications();await loadAudit();await loadTickets();updateHome()}catch(e){toast(e.message);console.error('refresh() falhou:',e)}}
 function updateHome(){const has=state.devices.length>0;document.getElementById('dashboardConnected').hidden=!has;document.getElementById('dashboardEmpty').style.display=has?'none':'grid';document.getElementById('systemText').textContent=has?'Operacional':'Aguardando dispositivo'}
-function updateDeviceState(){updateHome();const d=selectedDevice();document.getElementById('selectedDeviceLabel').textContent=d?.name||'--';document.getElementById('selectedLocationLabel').textContent=d?locName(d.location_id):'--';document.getElementById('networkStatus').textContent=d?.status==='online'?'Online':'Offline';document.getElementById('networkStatusBox').style.color=d?.status==='online'?'var(--green)':'var(--red)';document.getElementById('ipAddress').textContent=d?.last_seen_ip||d?.wifi_status||'--';document.getElementById('supportDevice').textContent=d?.name||'--'}
-function updateDashboard(){updateDeviceState();const d=selectedDevice();const last=state.readings.at(-1);renderGauge(last?.value??d?.latest_ppm??NaN);document.getElementById('lastReadingTime').textContent=last?fmtDate(last.time):'--';document.getElementById('metricAvg').textContent=d?.stats?.average_ppm!=null?Math.round(d.stats.average_ppm):'--';document.getElementById('avgProgress').style.width=d?.stats?.average_ppm?`${Math.min(100,d.stats.average_ppm/thresholds().critical*100)}%`:'0%';document.getElementById('metricWifi').textContent=d?.status==='online'?'Online':'Offline';document.getElementById('wifiProgress').style.width=d?.status==='online'?'100%':'15%';renderChart();renderEvents();renderSensors()}
-function renderGauge(v){const n=Number(v);if(!Number.isFinite(n)){document.getElementById('currentPpm').textContent='--';return}const st=statusFor(n),root=document.getElementById('statusCard');root.style.setProperty('--status-color',st.color);document.getElementById('statusIcon').textContent=st.icon;document.getElementById('statusLabel').textContent=st.label;document.getElementById('statusMessage').textContent=st.msg;document.getElementById('currentPpm').textContent=Math.round(n);document.getElementById('gaugeNeedle').setAttribute('transform',`rotate(${-55+Math.min(1,n/thresholds().critical)*110} 160 164)`);document.getElementById('systemState').textContent=st.label;document.getElementById('gaugeMax').textContent=thresholds().critical+'+ ppm'}
+function updateDeviceState(){updateHome();const d=selectedDevice();document.getElementById('selectedDeviceLabel').textContent=d?.name||'--';document.getElementById('selectedLocationLabel').textContent=d?locName(d.location_id):'--';document.getElementById('networkStatus').textContent=d?.status==='online'?'Online':'Offline';document.getElementById('networkStatusBox').style.color=d?.status==='online'?'var(--green)':'var(--red)';document.getElementById('ipAddress').textContent=d?.last_seen_ip||d?.wifi_status||'--';const hn=document.getElementById('houseDeviceName');if(!hn)return;hn.textContent=d?.name||'--';document.getElementById('houseLocation').textContent=d?locName(d.location_id):'--';const ppm=state.readings.at(-1)?.value??d?.latest_ppm;document.getElementById('houseCurrentPpm').textContent=ppm!=null&&!Number.isNaN(Number(ppm))?Math.round(ppm)+' ppm*':'--';const st=d&&ppm!=null&&!Number.isNaN(Number(ppm))?statusFor(Number(ppm)):null;document.getElementById('houseStatus').textContent=st?st.label:'--';document.getElementById('houseWifi').textContent=d?.status==='online'?'Online':'Offline';document.getElementById('houseLastSeen').textContent=state.readings.at(-1)?fmtDate(state.readings.at(-1).time):'--'}
+function updateDashboard(){updateDeviceState();const d=selectedDevice();const last=state.readings.at(-1);renderGauge(last?.value??d?.latest_ppm??NaN);document.getElementById('lastReadingTime').textContent=last?fmtDate(last.time):'--';document.getElementById('metricAvg').textContent=d?.stats?.average_ppm!=null?Math.round(d.stats.average_ppm):'--';document.getElementById('avgProgress').style.width=d?.stats?.average_ppm?`${Math.min(100,d.stats.average_ppm/thresholds().critical*100)}%`:'0%';document.getElementById('metricWifi').textContent=d?.status==='online'?'Online':'Offline';document.getElementById('wifiProgress').style.width=d?.status==='online'?'100%':'15%';renderChart();renderEvents();renderSensors();if(plan3d){renderPlan3D();if(document.getElementById('view-planta').classList.contains('active'))renderPlan2D()}}
+function renderGauge(v){const n=Number(v);if(!Number.isFinite(n)){document.getElementById('currentPpm').textContent='--';return}const st=statusFor(n),root=document.getElementById('statusCard');root.style.setProperty('--status-color',st.color);document.getElementById('statusIcon').textContent=st.icon;document.getElementById('statusLabel').textContent=st.label;document.getElementById('statusMessage').textContent=st.msg;document.getElementById('currentPpm').textContent=Math.round(n);document.getElementById('gaugeNeedle').setAttribute('transform',`rotate(${-55+Math.min(1,n/thresholds().critical)*110} 160 164)`);document.getElementById('systemState').textContent=st.label;document.getElementById('gaugeMax').textContent=thresholds().critical+'+ ppm';document.body.classList.toggle('critical-flash',st.key==='perigo')}
 function series(){const now=Date.now();if(state.range==='today'){const d=new Date();d.setHours(0,0,0,0);return state.readings.filter(x=>x.time>=d)}if(state.range==='24h')return state.readings.filter(x=>x.time>=new Date(now-86400000));return state.readings}
 function renderChart(){const arr=series();const svg=document.getElementById('mainChart');const grid=document.getElementById('chartGrid');if(!arr.length){document.getElementById('chartLine').setAttribute('d','');document.getElementById('chartArea').setAttribute('d','');grid.innerHTML='';['statMin','statAvg','statMax','statLast'].forEach(i=>document.getElementById(i).textContent='--');return}const W=920,H=310,L=42,R=12,T=18,B=280,max=Math.max(thresholds().critical*1.15,100,...arr.map(x=>x.value));const pts=arr.map((p,i)=>({x:L+(i/Math.max(1,arr.length-1))*(W-L-R),y:B-(p.value/max)*(B-T),p}));let d=`M ${pts[0].x} ${pts[0].y}`;for(let i=1;i<pts.length;i++){const a=pts[i-1],b=pts[i],cx=(a.x+b.x)/2;d+=` Q ${a.x} ${a.y} ${cx} ${(a.y+b.y)/2}`}d+=` T ${pts.at(-1).x} ${pts.at(-1).y}`;document.getElementById('chartLine').setAttribute('d',d);document.getElementById('chartArea').setAttribute('d',`${d} L ${pts.at(-1).x} ${B} L ${pts[0].x} ${B} Z`);const y=v=>B-(v/max)*(B-T);const lines=[0,Math.round(max*.25),Math.round(max*.5),Math.round(max*.75),Math.round(max)];grid.innerHTML=lines.map(v=>`<line x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}" stroke="rgba(255,255,255,.06)"/><text x="5" y="${y(v)+4}" fill="#7e8ca1" font-size="10">${v}</text>`).join('')+`<line x1="${L}" x2="${W-R}" y1="${y(thresholds().alert)}" y2="${y(thresholds().alert)}" stroke="#ffc857" stroke-dasharray="6 6"/><line x1="${L}" x2="${W-R}" y1="${y(thresholds().critical)}" y2="${y(thresholds().critical)}" stroke="#ff5757" stroke-dasharray="6 6"/>`;document.getElementById('chartPoints').innerHTML=pts.map((p,i)=>i%Math.max(1,Math.floor(pts.length/12))===0||i===pts.length-1?`<circle cx="${p.x}" cy="${p.y}" r="3" fill="#20d7b2"/>`:'').join('');const vals=arr.map(x=>x.value);document.getElementById('statMin').textContent=Math.round(Math.min(...vals));document.getElementById('statAvg').textContent=Math.round(vals.reduce((a,b)=>a+b,0)/vals.length);document.getElementById('statMax').textContent=Math.round(Math.max(...vals));document.getElementById('statLast').textContent=Math.round(vals.at(-1));svg._points=pts;svg._series=arr}
 function renderEvents(){const el=document.getElementById('eventList');const ev=state.history.filter(r=>r.reading_status!=='normal').slice(0,8);el.innerHTML=ev.length?ev.map(r=>`<div class="event ${r.reading_status==='perigo'?'bad':'warn'}"><i></i><div><strong>${r.reading_status==='perigo'?'Perigo':'Atenção'} · ${esc(r.device)}</strong><p>${esc(r.ppm)} ppm registrado no ambiente ${esc(r.location)}</p></div><time>${fmtDate(r.created_at)}</time></div>`).join(''):'<div class="card-sub">Nenhum evento de alerta registrado.</div>'}
-function renderSensors(){document.getElementById('dashboardSensors').innerHTML=state.devices.map(d=>`<article class="card sensor"><header><h3>${esc(d.name)}</h3><span class="${d.status==='online'?'online':'offline'}">● ${d.status==='online'?'Online':'Offline'}</span></header><div class="reading"><strong>${d.latest_ppm!=null?Math.round(d.latest_ppm):'--'}</strong><span>ppm</span></div><div class="sensor-foot"><span>${esc(locName(d.location_id))}</span><button class="btn small" data-select="${d.id}">Abrir</button></div></article>`).join('')||'<div class="card pad">Nenhum dispositivo cadastrado.</div>';document.getElementById('sensorTable').innerHTML=state.devices.map(d=>`<tr><td><strong>${esc(d.name)}</strong></td><td>${esc(d.esp32_id)}</td><td>${esc(locName(d.location_id))}</td><td>${esc(d.sensor_type||'MQ-6')}</td><td><span class="status ${d.status==='online'?'normal':'perigo'}">${esc(d.status)}</span></td><td>${d.latest_ppm!=null?Math.round(d.latest_ppm)+' ppm':'--'}</td><td><button class="btn small" data-select="${d.id}">Selecionar</button></td></tr>`).join('')||'<tr><td colspan="7">Nenhum dispositivo.</td></tr>';document.getElementById('deviceCountPill').textContent=`${state.devices.length} dispositivo${state.devices.length===1?'':'s'}`}
+function renderSensors(){document.getElementById('sensorTable').innerHTML=state.devices.map(d=>`<tr><td><strong>${esc(d.name)}</strong></td><td>${esc(d.esp32_id)}</td><td>${esc(locName(d.location_id))}</td><td>${esc(d.sensor_type||'MQ-6')}</td><td><span class="status ${d.status==='online'?'normal':'perigo'}">${esc(d.status)}</span></td><td>${d.latest_ppm!=null?Math.round(d.latest_ppm)+' ppm':'--'}</td><td><button class="btn small" data-select="${d.id}">Selecionar</button></td></tr>`).join('')||'<tr><td colspan="7">Nenhum dispositivo.</td></tr>';document.getElementById('deviceCountPill').textContent=`${state.devices.length} dispositivo${state.devices.length===1?'':'s'}`}
 function filteredHistory(){const q=document.getElementById('historySearch').value.toLowerCase(),st=document.getElementById('historyStatus').value,min=Number(document.getElementById('historyMin').value||-Infinity),max=Number(document.getElementById('historyMax').value||Infinity);return state.history.filter(r=>(!q||`${r.device} ${r.location}`.toLowerCase().includes(q))&&(!st||r.reading_status===st)&&Number(r.ppm)>=min&&Number(r.ppm)<=max)}
 function renderHistory(){const rows=filteredHistory(),pages=Math.max(1,Math.ceil(rows.length/state.historyPerPage));state.historyPage=Math.min(state.historyPage,pages);const start=(state.historyPage-1)*state.historyPerPage,view=rows.slice(start,start+state.historyPerPage);document.getElementById('historyTable').innerHTML=view.map(r=>`<tr><td>${fmtDate(r.created_at)}</td><td>${esc(r.device)}</td><td>${esc(r.location)}</td><td><strong>${Math.round(r.ppm)} ppm</strong></td><td><span class="status ${r.reading_status}">${esc(r.reading_status)}</span></td><td>${r.wifi_rssi??'--'} dBm</td></tr>`).join('')||'<tr><td colspan="6">Nenhuma leitura encontrada.</td></tr>';document.getElementById('historyCount').textContent=`${rows.length} registros`;document.getElementById('historyPage').textContent=`${state.historyPage}/${pages}`;document.getElementById('historyPrev').disabled=state.historyPage<=1;document.getElementById('historyNext').disabled=state.historyPage>=pages}
 function renderReports(){const rows=state.history,total=rows.length,vals=rows.map(r=>Number(r.ppm));document.getElementById('reportTotal').textContent=total;document.getElementById('reportAvg').textContent=total?Math.round(vals.reduce((a,b)=>a+b,0)/total)+' ppm':'--';document.getElementById('reportMax').textContent=total?Math.round(Math.max(...vals))+' ppm':'--';document.getElementById('reportAlerts').textContent=rows.filter(r=>r.reading_status==='atencao').length;document.getElementById('reportCritical').textContent=rows.filter(r=>r.reading_status==='perigo').length;const groups={};rows.forEach(r=>{const day=String(r.created_at).slice(0,10);const key=`${day}|${r.device}`;if(!groups[key])groups[key]={day,device:r.device,location:r.location,values:[],alerts:0};groups[key].values.push(Number(r.ppm));if(r.reading_status!=='normal')groups[key].alerts++});document.getElementById('reportTable').innerHTML=Object.values(groups).sort((a,b)=>b.day.localeCompare(a.day)).map(g=>`<tr><td>${g.day}</td><td>${esc(g.device)}</td><td>${esc(g.location)}</td><td>${g.values.length}</td><td>${Math.round(g.values.reduce((a,b)=>a+b,0)/g.values.length)} ppm</td><td>${Math.round(Math.min(...g.values))} ppm</td><td>${Math.round(Math.max(...g.values))} ppm</td><td>${g.alerts}</td></tr>`).join('')||'<tr><td colspan="8">Nenhum dado.</td></tr>'}
-async function loadNotifications(){const d=await api('app.php?action=notifications');state.notifications=d.notifications||[];const unread=state.notifications.filter(n=>Number(n.is_read)===0).length;const b=document.getElementById('notificationBadge');b.textContent=unread;b.hidden=!unread;document.getElementById('notificationList').innerHTML=state.notifications.length?state.notifications.map(n=>`<div class="notice"><strong>${esc(n.title)}</strong><p>${esc(n.message)}</p><time>${fmtDate(n.created_at)}</time></div>`).join(''):'<div class="card-sub">Nenhuma notificação.</div>'}
+async function loadNotifications(){const d=await api('app.php?action=notifications');state.notifications=d.notifications||[];const unread=state.notifications.filter(n=>Number(n.is_read)===0).length;const b=document.getElementById('notificationBadge');b.textContent=unread;b.hidden=!unread;document.getElementById('notificationList').innerHTML=state.notifications.length?state.notifications.map(n=>`<div class="notice ${n.type==='support_reply'&&n.related_id?'notice-clickable':''}" ${n.type==='support_reply'&&n.related_id?`data-open-ticket="${n.related_id}"`:''}><strong>${esc(n.title)}</strong><p>${esc(n.message)}</p><time>${fmtDate(n.created_at)}</time></div>`).join(''):'<div class="card-sub">Nenhuma notificação.</div>'}
 async function loadAudit(){const d=await api('app.php?action=audit');document.getElementById('auditTable').innerHTML=(d.logs||[]).map(x=>`<tr><td>${fmtDate(x.created_at)}</td><td>${esc(x.action)}</td><td>${esc(x.entity||'')}</td><td>${esc(x.details||'')}</td></tr>`).join('')||'<tr><td colspan="4">Nenhum registro de auditoria.</td></tr>'}
 async function scanNetwork(){
   const list=document.getElementById('discoveredList');
@@ -362,19 +511,247 @@ async function connectFoundDevice(card){
 }
 async function connectDevice(e){e.preventDefault();const p={action:'create_device',name:document.getElementById('connectName').value.trim(),esp32_id:document.getElementById('connectEsp').value.trim(),manufacturer_code:document.getElementById('connectCode').value.trim(),location_id:document.getElementById('connectLocation').value||null,description:document.getElementById('connectDescription').value.trim(),sensor_type:'MQ-6'};try{const d=await api('manage.php',{method:'POST',body:JSON.stringify(p)});closeModal('connectModal');await loadDevices();state.selected=d.device_id;await loadData();updateHome();alert('Dispositivo vinculado!\n\nAPI KEY do ESP32:\n'+d.api_key+'\n\nGuarde essa chave. Ela será usada para enviar as leituras.');toast('Dispositivo registrado no MySQL.')}catch(e){toast(e.message)}}
 async function joinDevice(e){e.preventDefault();const p={action:'join_device',esp32_id:document.getElementById('joinEsp').value.trim(),api_key:document.getElementById('joinApiKey').value.trim()};try{await api('manage.php',{method:'POST',body:JSON.stringify(p)});closeModal('connectModal');document.getElementById('joinForm').reset();await loadDevices();await loadData();updateHome();toast('Dispositivo vinculado à sua conta.')}catch(e){toast(e.message)}}
-async function saveLocation(e){e.preventDefault();try{await api('manage.php',{method:'POST',body:JSON.stringify({action:'create_location',name:document.getElementById('locationName').value.trim(),sector:document.getElementById('locationSector').value.trim(),floor:document.getElementById('locationFloor').value.trim(),description:document.getElementById('locationDescription').value.trim()})});closeModal('locationModal');document.getElementById('locationForm').reset();await loadLocations();toast('Ambiente registrado.')}catch(e){toast(e.message)}}
+async function saveLocation(e){e.preventDefault();try{await api('manage.php',{method:'POST',body:JSON.stringify({action:'create_location',name:document.getElementById('locationName').value.trim(),sector:document.getElementById('locationSector').value.trim(),floor:document.getElementById('locationFloor').value.trim(),description:document.getElementById('locationDescription').value.trim()})});closeModal('locationModal');document.getElementById('locationForm').reset();await loadLocations();if(document.getElementById('view-planta').classList.contains('active')){renderPlan2D();renderPlan3D()}toast('Ambiente registrado.')}catch(e){toast(e.message)}}
+
+/* =========================================================
+   PLANTA 3D — editor 2D (arrastar/redimensionar) + cena 3D
+   ========================================================= */
+const PLAN_SCALE=32;
+const SVGNS='http://www.w3.org/2000/svg';
+let plan3d=null;
+
+function statusColorHex(device){
+  if(!device||device.status!=='online')return 0x5b6b62;
+  const ppm=device.latest_ppm;
+  if(ppm==null)return 0x5b6b62;
+  const st=statusFor(Number(ppm));
+  return st.key==='perigo'?0xff5757:st.key==='atencao'?0xffc857:0x35dc87;
+}
+function statusColorCss(device){return '#'+statusColorHex(device).toString(16).padStart(6,'0')}
+
+function renderPlan2D(){
+  const svg=document.getElementById('planSvg');
+  if(!svg)return;
+  svg.innerHTML='';
+  state.locations.forEach(loc=>{
+    const x=Number(loc.pos_x)*PLAN_SCALE,y=Number(loc.pos_y)*PLAN_SCALE,w=Number(loc.width)*PLAN_SCALE,h=Number(loc.depth)*PLAN_SCALE;
+    const g=document.createElementNS(SVGNS,'g');
+    g.dataset.locationId=loc.id;
+    const rect=document.createElementNS(SVGNS,'rect');
+    rect.setAttribute('x',x);rect.setAttribute('y',y);rect.setAttribute('width',w);rect.setAttribute('height',h);
+    rect.setAttribute('class','plan-room');rect.dataset.role='move';
+    const label=document.createElementNS(SVGNS,'text');
+    label.setAttribute('x',x+6);label.setAttribute('y',y+16);label.setAttribute('class','plan-room-label');
+    label.textContent=loc.name;
+    const handle=document.createElementNS(SVGNS,'rect');
+    handle.setAttribute('x',x+w-9);handle.setAttribute('y',y+h-9);handle.setAttribute('width',9);handle.setAttribute('height',9);
+    handle.setAttribute('class','plan-room-handle');handle.dataset.role='resize';
+    g.appendChild(rect);g.appendChild(label);g.appendChild(handle);
+    const devicesHere=state.devices.filter(d=>Number(d.location_id)===Number(loc.id));
+    devicesHere.forEach((d,i)=>{
+      const dot=document.createElementNS(SVGNS,'circle');
+      dot.setAttribute('cx',x+w/2+(i-(devicesHere.length-1)/2)*14);
+      dot.setAttribute('cy',y+h-14);
+      dot.setAttribute('r',5);
+      dot.setAttribute('class','plan-device-dot');
+      dot.setAttribute('fill',statusColorCss(d));
+      g.appendChild(dot);
+    });
+    svg.appendChild(g);
+  });
+}
+
+function bindPlanEditor(){
+  const svg=document.getElementById('planSvg');
+  if(!svg||svg.dataset.bound)return;
+  svg.dataset.bound='1';
+  svg.addEventListener('pointerdown',e=>{
+    const g=e.target.closest('g[data-location-id]');
+    if(!g)return;
+    const locId=Number(g.dataset.locationId);
+    const loc=state.locations.find(l=>Number(l.id)===locId);
+    if(!loc)return;
+    const role=e.target.dataset.role||'move';
+    const startX=e.clientX,startY=e.clientY;
+    const orig={x:Number(loc.pos_x),y:Number(loc.pos_y),w:Number(loc.width),h:Number(loc.depth)};
+    svg.setPointerCapture(e.pointerId);
+    function onMove(ev){
+      const dx=(ev.clientX-startX)/PLAN_SCALE,dy=(ev.clientY-startY)/PLAN_SCALE;
+      if(role==='resize'){
+        loc.width=Math.max(0.6,orig.w+dx);
+        loc.depth=Math.max(0.6,orig.h+dy);
+      }else{
+        loc.pos_x=Math.max(0,orig.x+dx);
+        loc.pos_y=Math.max(0,orig.y+dy);
+      }
+      renderPlan2D();
+      renderPlan3D();
+    }
+    function onUp(){
+      svg.removeEventListener('pointermove',onMove);
+      api('manage.php',{method:'POST',body:JSON.stringify({action:'update_location_layout',id:locId,pos_x:loc.pos_x,pos_y:loc.pos_y,width:loc.width,depth:loc.depth})}).catch(err=>toast(err.message));
+    }
+    svg.addEventListener('pointermove',onMove);
+    svg.addEventListener('pointerup',onUp,{once:true});
+  });
+}
+
+function initPlan3D(){
+  const host=document.getElementById('plan3dHost');
+  if(!host||plan3d||typeof THREE==='undefined')return;
+  const scene=new THREE.Scene();
+  scene.background=new THREE.Color(0x070b0a);
+  const camera=new THREE.PerspectiveCamera(50,host.clientWidth/Math.max(1,host.clientHeight),0.1,200);
+  camera.position.set(9,9,11);
+  const renderer=new THREE.WebGLRenderer({antialias:true});
+  renderer.setSize(host.clientWidth,host.clientHeight);
+  host.style.position='relative';
+  host.appendChild(renderer.domElement);
+  const tooltip=document.createElement('div');
+  tooltip.className='plan-tooltip';
+  host.appendChild(tooltip);
+
+  scene.add(new THREE.AmbientLight(0xffffff,0.55));
+  const dir=new THREE.DirectionalLight(0xffffff,0.85);
+  dir.position.set(6,12,6);
+  scene.add(dir);
+
+  const floor=new THREE.Mesh(new THREE.PlaneGeometry(60,60),new THREE.MeshStandardMaterial({color:0x0b1110,roughness:1}));
+  floor.rotation.x=-Math.PI/2;
+  scene.add(floor);
+  scene.add(new THREE.GridHelper(60,60,0x1c2b24,0x121a16));
+
+  const controls=new THREE.OrbitControls(camera,renderer.domElement);
+  controls.enableDamping=true;
+  controls.autoRotate=true;
+  controls.autoRotateSpeed=0.6;
+  controls.addEventListener('start',()=>{controls.autoRotate=false});
+
+  const raycaster=new THREE.Raycaster();
+  const mouse=new THREE.Vector2();
+  renderer.domElement.addEventListener('pointermove',e=>{
+    const rect=host.getBoundingClientRect();
+    mouse.x=((e.clientX-rect.left)/rect.width)*2-1;
+    mouse.y=-((e.clientY-rect.top)/rect.height)*2+1;
+    raycaster.setFromCamera(mouse,camera);
+    const hits=raycaster.intersectObjects(Object.values(plan3d.deviceMeshes));
+    if(hits.length){
+      const dv=hits[0].object.userData.device;
+      tooltip.style.display='block';
+      tooltip.style.left=(e.clientX-rect.left+12)+'px';
+      tooltip.style.top=(e.clientY-rect.top+12)+'px';
+      tooltip.innerHTML=`<strong>${esc(dv.name)}</strong><br>${esc(locName(dv.location_id))} · ${dv.latest_ppm!=null?Math.round(dv.latest_ppm):'--'} ppm* · ${dv.status==='online'?'Online':'Offline'}`;
+      renderer.domElement.style.cursor='pointer';
+    }else{
+      tooltip.style.display='none';
+      renderer.domElement.style.cursor='default';
+    }
+  });
+  renderer.domElement.addEventListener('click',e=>{
+    const rect=host.getBoundingClientRect();
+    const mx=((e.clientX-rect.left)/rect.width)*2-1;
+    const my=-((e.clientY-rect.top)/rect.height)*2+1;
+    raycaster.setFromCamera(new THREE.Vector2(mx,my),camera);
+    const hits=raycaster.intersectObjects(Object.values(plan3d.deviceMeshes));
+    if(!hits.length)return;
+    const dv=hits[0].object.userData.device;
+    state.selected=dv.id;
+    document.getElementById('deviceSelector').value=dv.id;
+    loadData();
+  });
+
+  function resize(){
+    if(!host.clientWidth||!host.clientHeight)return;
+    camera.aspect=host.clientWidth/host.clientHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(host.clientWidth,host.clientHeight);
+  }
+  window.addEventListener('resize',resize);
+
+  function animate(){
+    requestAnimationFrame(animate);
+    controls.update();
+    const t=Date.now()/450;
+    Object.values(plan3d.deviceMeshes).forEach(m=>{const s=1+Math.sin(t)*0.14;m.scale.set(s,s,s)});
+    renderer.render(scene,camera);
+  }
+
+  plan3d={scene,camera,renderer,controls,roomGroups:{},deviceMeshes:{},resize};
+  animate();
+  bindPlanEditor();
+}
+
+function renderPlan3D(){
+  if(!plan3d)return;
+  const {scene}=plan3d;
+  Object.values(plan3d.roomGroups).forEach(g=>scene.remove(g));
+  Object.values(plan3d.deviceMeshes).forEach(m=>scene.remove(m));
+  plan3d.roomGroups={};plan3d.deviceMeshes={};
+
+  state.locations.forEach(loc=>{
+    const w=Math.max(0.6,Number(loc.width)),d=Math.max(0.6,Number(loc.depth)),h=2.4;
+    const group=new THREE.Group();
+    const box=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new THREE.MeshStandardMaterial({color:0x1a2b22,transparent:true,opacity:0.32,emissive:0x0d1f16}));
+    group.add(box);
+    const edges=new THREE.LineSegments(new THREE.EdgesGeometry(box.geometry),new THREE.LineBasicMaterial({color:0x35dc87,transparent:true,opacity:0.55}));
+    group.add(edges);
+    group.position.set(Number(loc.pos_x)+w/2,h/2,Number(loc.pos_y)+d/2);
+    scene.add(group);
+    plan3d.roomGroups[loc.id]=group;
+
+    const devicesHere=state.devices.filter(dv=>Number(dv.location_id)===Number(loc.id));
+    devicesHere.forEach((dv,i)=>{
+      const color=statusColorHex(dv);
+      const sphere=new THREE.Mesh(new THREE.SphereGeometry(0.22,18,18),new THREE.MeshStandardMaterial({color,emissive:color,emissiveIntensity:0.85}));
+      const offsetX=(i-(devicesHere.length-1)/2)*0.6;
+      sphere.position.set(Number(loc.pos_x)+w/2+offsetX,1.2,Number(loc.pos_y)+d/2);
+      sphere.userData.device=dv;
+      scene.add(sphere);
+      plan3d.deviceMeshes[dv.id]=sphere;
+    });
+  });
+
+  const semLocal=state.devices.filter(dv=>!dv.location_id);
+  semLocal.forEach((dv,i)=>{
+    const color=statusColorHex(dv);
+    const sphere=new THREE.Mesh(new THREE.SphereGeometry(0.22,18,18),new THREE.MeshStandardMaterial({color,emissive:color,emissiveIntensity:0.85}));
+    sphere.position.set(-2,1.2,i*1.2);
+    sphere.userData.device=dv;
+    scene.add(sphere);
+    plan3d.deviceMeshes[dv.id]=sphere;
+  });
+}
 async function saveProfile(e){e.preventDefault();try{await api('app.php?action=save_profile',{method:'POST',body:JSON.stringify({nome:document.getElementById('profileFormName').value.trim(),display_name:document.getElementById('profileDisplay').value.trim(),phone:document.getElementById('profilePhone').value.trim(),biography:document.getElementById('profileBio').value.trim(),avatar:state.selectedIcon})});closeModal('profileModal');await loadProfile();toast('Perfil atualizado.')}catch(e){toast(e.message)}}
-async function loadTickets(){try{const d=await api('app.php?action=support_list');state.tickets=d.tickets||[];renderTickets();if(state.ticketId)await loadMessages(state.ticketId);else if(state.tickets.length)await loadMessages(state.tickets[0].id)}catch(e){console.error(e)}}
-function renderTickets(){document.getElementById('ticketList').innerHTML=state.tickets.length?state.tickets.map(t=>`<button class="ticket ${Number(t.id)===Number(state.ticketId)?'active':''}" data-ticket="${t.id}"><strong>#AG-${t.id} · ${esc(t.subject)}</strong><span>${esc(t.category)} · ${esc(t.status)}</span></button>`).join(''):'<div class="card-sub">Nenhum chamado aberto.</div>'}
-async function loadMessages(id){state.ticketId=id;renderTickets();const d=await api(`app.php?action=support_messages&ticket_id=${id}`);const t=state.tickets.find(x=>Number(x.id)===Number(id));document.getElementById('ticketTitle').textContent=t?`#AG-${t.id} · ${t.subject}`:'Chamado';document.getElementById('ticketStatus').textContent=t?`Status: ${t.status}`:'';document.getElementById('messages').innerHTML=(d.messages||[]).map(m=>`<div class="message ${m.sender_type==='user'?'me':''}"><strong>${m.sender_type==='user'?'Você':'Equipe de desenvolvimento'}</strong><p>${esc(m.message)}</p><small>${fmtDate(m.created_at)}${Number(m.email_sent)?' · email enviado':''}</small></div>`).join('')||'<div class="card-sub">Nenhuma mensagem.</div>';const box=document.getElementById('messages');box.scrollTop=box.scrollHeight}
-async function createTicket(e){e.preventDefault();try{const d=await api('app.php?action=support_create',{method:'POST',body:JSON.stringify({subject:document.getElementById('ticketSubject').value.trim(),category:document.getElementById('ticketCategory').value,device_id:document.getElementById('ticketDevice').value||null,message:document.getElementById('ticketMessage').value.trim()})});closeModal('ticketModal');document.getElementById('ticketForm').reset();await loadTickets();await loadAudit();toast(d.email_sent?'Chamado salvo e enviado por email.':'Chamado salvo no banco; configure o email do servidor para envio real.')}catch(e){toast(e.message)}}
-async function sendMessage(e){e.preventDefault();if(!state.ticketId){toast('Selecione ou abra um chamado.');return}const input=document.getElementById('messageInput');const message=input.value.trim();if(!message)return;try{const d=await api('app.php?action=support_send',{method:'POST',body:JSON.stringify({ticket_id:state.ticketId,message})});input.value='';await loadMessages(state.ticketId);await loadAudit();toast(d.email_sent?'Mensagem enviada por email.':'Mensagem registrada; configure o email do servidor para envio real.')}catch(e){toast(e.message)}}
+const SUPPORT_EMAIL_ADDR='sadag.suporte@gmail.com';
+const ASSIST_SUGGESTIONS_HTML='<div class="assist-suggestions" id="assistSuggestions"><button type="button" data-suggest="Meu dispositivo está offline">Meu dispositivo está offline</button><button type="button" data-suggest="Como funciona o sensor?">Como funciona o sensor?</button><button type="button" data-suggest="Meu painel não mostra dados">Meu painel não mostra dados</button><button type="button" data-suggest="Como conectar o dispositivo?">Como conectar o dispositivo?</button></div>';
+function messageBubble(m){const cls=m.sender_type==='user'?'me':(m.sender_type==='support'?'team':'ai');const avatar=m.sender_type==='user'?'🧑':(m.sender_type==='support'?'🛠️':'🤖');const who=m.sender_type==='user'?'Você':(m.sender_type==='support'?'Equipe Sadag':'Sadag Assist');return `<div class="chat-bubble ${cls}${m._arrived?' arrived':''}"><span class="bubble-avatar">${avatar}</span><div class="bubble-body">${esc(m.message)}<small>${who} · ${fmtDate(m.created_at)}${Number(m.email_sent)?' · email enviado':''}</small></div></div>`}
+function renderChat(){const box=document.getElementById('chatBody');const empty=!state.ticketId&&!state.messages.length;const greet=empty?'<div class="chat-bubble ai"><span class="bubble-avatar">🤖</span><div class="bubble-body">Olá! Sou o Sadag Assist — estou presente em todas as suas conversas. Como posso ajudar?<small>Sadag Assist</small></div></div>':'';const bubbles=state.messages.map(messageBubble).join('');const typing=state.thinking?'<div class="chat-bubble ai typing"><span class="bubble-avatar">🤖</span><div class="bubble-body"><span class="thinking-text">Sadag Assist está pensando...</span></div></div>':'';box.innerHTML=greet+bubbles+typing+(empty?ASSIST_SUGGESTIONS_HTML:'');box.scrollTop=box.scrollHeight;box.querySelectorAll('.arrived').forEach(el=>setTimeout(()=>el.classList.remove('arrived'),2200))}
+function renderConvoList(){const box=document.getElementById('convoList');const novo=`<button type="button" class="chat-convo ${!state.ticketId?'active':''}" data-new="1"><span class="convo-avatar">🤖</span><span class="convo-info"><strong>Nova conversa</strong><small>Sadag Assist</small></span></button>`;const items=state.tickets.map(t=>`<button type="button" class="chat-convo ${Number(t.id)===Number(state.ticketId)?'active':''}" data-ticket="${t.id}"><span class="convo-avatar">${Number(t.escalated)?'🛠️':'🤖'}</span><span class="convo-info"><strong>${esc(t.subject)}</strong><small>${Number(t.escalated)?'Com a equipe':'Sadag Assist'} · ${esc(t.status)}</small></span></button>`).join('');box.innerHTML=novo+items}
+async function loadTickets(){try{const d=await api('app.php?action=support_list');state.tickets=d.tickets||[];renderConvoList()}catch(e){console.error(e)}}
+function updateChatHeader(){const t=state.ticketId?state.tickets.find(x=>Number(x.id)===Number(state.ticketId)):null;document.getElementById('chatHeadTitle').textContent=t?t.subject:'Nova conversa';document.getElementById('chatHeadSub').textContent=t?(Number(t.escalated)?'Com a equipe · '+t.status:'Sadag Assist · '+t.status):'Sadag Assist';document.getElementById('escalateButton').hidden=!t||!!Number(t.escalated);document.getElementById('replyByEmail').hidden=!t||!Number(t.escalated);document.getElementById('closeTicket').hidden=!t;if(t)document.getElementById('replyByEmail').href=`mailto:${SUPPORT_EMAIL_ADDR}?subject=${encodeURIComponent('[AG-'+t.id+'] Re: Atendimento')}`}
+/*
+ * Fonte única de verdade pra evitar mensagem duplicada: em vez de
+ * "adivinhar" localmente a mensagem que acabamos de mandar (e depois
+ * o polling trazer ela de novo do banco), toda escrita no chat é
+ * seguida de uma sincronização real com o servidor, sempre a partir
+ * do último id já visto. O mutex "syncing" evita que o polling e uma
+ * sincronização manual rodem ao mesmo tempo e tragam o mesmo lote.
+ */
+async function syncMessages(){if(!state.ticketId||state.syncing)return;state.syncing=true;try{const d=await api(`app.php?action=support_messages&ticket_id=${state.ticketId}&after_id=${state.lastMsgId||0}`);if(d.messages&&d.messages.length){const gotTeam=d.messages.some(m=>m.sender_type==='support');d.messages.forEach(m=>m._arrived=m.sender_type==='support');state.messages.push(...d.messages);state.lastMsgId=Math.max(state.lastMsgId||0,...d.messages.map(m=>m.id));renderChat();if(gotTeam)toast('💬 Nova mensagem do técnico recebida.')}}catch(e){}state.syncing=false}
+function stopSupportPoll(){if(state.supportPoll){clearInterval(state.supportPoll);state.supportPoll=null}}
+function startSupportPoll(){stopSupportPoll();state.supportPoll=setInterval(syncMessages,800)}
+function newConversation(){state.ticketId=null;state.lastMsgId=0;state.messages=[];stopSupportPoll();renderConvoList();updateChatHeader();renderChat();document.getElementById('chatInput').focus()}
+async function loadMessages(id){state.ticketId=id;state.lastMsgId=0;state.messages=[];renderConvoList();const d=await api(`app.php?action=support_messages&ticket_id=${id}`);state.messages=d.messages||[];if(state.messages.length)state.lastMsgId=Math.max(...state.messages.map(m=>m.id));updateChatHeader();renderChat();startSupportPoll()}
+async function sendChat(text){text=text.trim();if(!text)return;const isNew=!state.ticketId;const existing=isNew?null:state.tickets.find(x=>Number(x.id)===Number(state.ticketId));const escalated=existing&&Number(existing.escalated);state.messages.push({sender_type:'user',message:text,created_at:new Date().toISOString(),_pending:true});state.thinking=!escalated;renderChat();try{if(isNew){const d=await api('app.php?action=support_create',{method:'POST',body:JSON.stringify({message:text})});state.ticketId=d.ticket_id;state.lastMsgId=0;await loadTickets()}else{await api('app.php?action=support_send',{method:'POST',body:JSON.stringify({ticket_id:state.ticketId,message:text})})}state.messages=state.messages.filter(m=>!m._pending);state.thinking=false;await syncMessages();updateChatHeader();if(!state.supportPoll)startSupportPoll();renderConvoList()}catch(e){state.messages=state.messages.filter(m=>!m._pending);state.thinking=false;toast(e.message)}renderChat()}
+async function escalateConversation(){if(!state.ticketId)return;try{const d=await api('app.php?action=support_escalate',{method:'POST',body:JSON.stringify({ticket_id:state.ticketId})});await syncMessages();await loadTickets();updateChatHeader();toast(d.email_sent?'Equipe avisada por email.':'Equipe registrada; email indisponível no momento.')}catch(e){toast(e.message)}}
+async function closeCurrentTicket(){if(!state.ticketId)return;try{await api('app.php?action=support_close',{method:'POST',body:JSON.stringify({ticket_id:state.ticketId})});await loadTickets();updateChatHeader();toast('Conversa encerrada.')}catch(e){toast(e.message)}}
 function exportRows(rows,name){const csv=['data_hora,dispositivo,ambiente,ppm,status,rssi',...rows.map(r=>`"${fmtDate(r.created_at).replaceAll('"','""')}","${String(r.device||'').replaceAll('"','""')}","${String(r.location||'').replaceAll('"','""')}",${r.ppm},"${r.reading_status}","${r.wifi_rssi??''}"`)].join('\n');const blob=new Blob([csv],{type:'text/csv;charset=utf-8'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();URL.revokeObjectURL(a.href)}
-function bind(){document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',e=>{if(b.tagName==='A')e.preventDefault();activateView(b.dataset.view)}));document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>closeModal(b.dataset.close)));document.getElementById('deviceSelector').addEventListener('change',async e=>{state.selected=Number(e.target.value);await loadData()});document.getElementById('connectButton').addEventListener('click',()=>{openModal('connectModal');scanNetwork()});document.getElementById('connectEmpty').addEventListener('click',()=>{openModal('connectModal');scanNetwork()});document.getElementById('discoverButton').addEventListener('click',()=>{openModal('connectModal');scanNetwork()});document.getElementById('scanNetwork').addEventListener('click',scanNetwork);document.getElementById('connectForm').addEventListener('submit',connectDevice);document.getElementById('joinForm').addEventListener('submit',joinDevice);document.getElementById('locationForm').addEventListener('submit',saveLocation);document.getElementById('newLocationButton').addEventListener('click',()=>openModal('locationModal'));document.getElementById('saveSettings').addEventListener('click',saveSettings);document.getElementById('language').addEventListener('change',e=>applyLanguage(e.target.value));document.querySelectorAll('.settings-tab').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.settings-tab').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.settings-pane').forEach(p=>p.classList.toggle('active',p.id===`settings-${b.dataset.settings}`))}));document.getElementById('profileAvatar').addEventListener('click',()=>document.getElementById('profileMenu').classList.toggle('open'));document.getElementById('openProfile').addEventListener('click',()=>{document.getElementById('profileMenu').classList.remove('open');openModal('profileModal')});document.getElementById('profileForm').addEventListener('submit',saveProfile);document.getElementById('iconGrid').addEventListener('click',e=>{const b=e.target.closest('[data-icon]');if(!b)return;state.selectedIcon=b.dataset.icon;renderIcons()});document.getElementById('bellButton').addEventListener('click',()=>document.getElementById('notificationPanel').classList.toggle('open'));document.getElementById('readNotifications').addEventListener('click',async()=>{await api('app.php?action=read_notifications',{method:'POST',body:'{}'});await loadNotifications()});document.getElementById('historyExport').addEventListener('click',()=>exportRows(filteredHistory(),'aeris-historico.csv'));document.getElementById('reportExport').addEventListener('click',()=>exportRows(state.history,'aeris-relatorio.csv'));['historySearch','historyStatus','historyMin','historyMax'].forEach(id=>document.getElementById(id).addEventListener('input',()=>{state.historyPage=1;renderHistory()}));document.getElementById('historyPrev').addEventListener('click',()=>{state.historyPage--;renderHistory()});document.getElementById('historyNext').addEventListener('click',()=>{state.historyPage++;renderHistory()});document.querySelectorAll('[data-range]').forEach(b=>b.addEventListener('click',()=>{state.range=b.dataset.range;document.querySelectorAll('[data-range]').forEach(x=>x.classList.toggle('active',x===b));renderChart()}));document.getElementById('newTicket').addEventListener('click',()=>openModal('ticketModal'));document.getElementById('ticketForm').addEventListener('submit',createTicket);document.getElementById('messageForm').addEventListener('submit',sendMessage);document.body.addEventListener('click',e=>{const s=e.target.closest('[data-select]');if(s){state.selected=Number(s.dataset.select);document.getElementById('deviceSelector').value=state.selected;activateView('dashboard');loadData()}const cf=e.target.closest('.connect-found');if(cf){const card=cf.closest('.found-card');card.querySelector('.mini-connect').hidden=false;cf.hidden=true;}const mc=e.target.closest('.mini-cancel');if(mc){const card=mc.closest('.found-card');card.querySelector('.mini-connect').hidden=true;card.querySelector('.connect-found').hidden=false;}const ok=e.target.closest('.mini-confirm');if(ok){connectFoundDevice(ok.closest('.found-card'));}});document.getElementById('logoutButton').addEventListener('click',()=>{location.href='logout.php'})}
+function bind(){document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',e=>{if(b.tagName==='A')e.preventDefault();activateView(b.dataset.view)}));document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>closeModal(b.dataset.close)));document.getElementById('deviceSelector').addEventListener('change',async e=>{state.selected=Number(e.target.value);await loadData()});document.getElementById('connectButton').addEventListener('click',()=>{openModal('connectModal');scanNetwork()});document.getElementById('connectEmpty').addEventListener('click',()=>{openModal('connectModal');scanNetwork()});document.getElementById('discoverButton').addEventListener('click',()=>{openModal('connectModal');scanNetwork()});document.getElementById('scanNetwork').addEventListener('click',scanNetwork);document.getElementById('connectForm').addEventListener('submit',connectDevice);document.getElementById('joinForm').addEventListener('submit',joinDevice);document.getElementById('locationForm').addEventListener('submit',saveLocation);document.getElementById('newLocationButton').addEventListener('click',()=>openModal('locationModal'));document.getElementById('plantaNewRoom').addEventListener('click',()=>openModal('locationModal'));document.getElementById('saveSettings').addEventListener('click',saveSettings);document.getElementById('language').addEventListener('change',e=>applyLanguage(e.target.value));document.querySelectorAll('.settings-tab').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.settings-tab').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.settings-pane').forEach(p=>p.classList.toggle('active',p.id===`settings-${b.dataset.settings}`))}));document.getElementById('profileAvatar').addEventListener('click',()=>document.getElementById('profileMenu').classList.toggle('open'));document.getElementById('openProfile').addEventListener('click',()=>{document.getElementById('profileMenu').classList.remove('open');openModal('profileModal')});document.getElementById('profileForm').addEventListener('submit',saveProfile);document.getElementById('iconGrid').addEventListener('click',e=>{const b=e.target.closest('[data-icon]');if(!b)return;state.selectedIcon=b.dataset.icon;renderIcons()});document.getElementById('bellButton').addEventListener('click',()=>document.getElementById('notificationPanel').classList.toggle('open'));document.getElementById('readNotifications').addEventListener('click',async()=>{await api('app.php?action=read_notifications',{method:'POST',body:'{}'});await loadNotifications()});document.getElementById('historyExport').addEventListener('click',()=>exportRows(filteredHistory(),'aeris-historico.csv'));document.getElementById('reportExport').addEventListener('click',()=>exportRows(state.history,'aeris-relatorio.csv'));['historySearch','historyStatus','historyMin','historyMax'].forEach(id=>document.getElementById(id).addEventListener('input',()=>{state.historyPage=1;renderHistory()}));document.getElementById('historyPrev').addEventListener('click',()=>{state.historyPage--;renderHistory()});document.getElementById('historyNext').addEventListener('click',()=>{state.historyPage++;renderHistory()});document.querySelectorAll('[data-range]').forEach(b=>b.addEventListener('click',()=>{state.range=b.dataset.range;document.querySelectorAll('[data-range]').forEach(x=>x.classList.toggle('active',x===b));renderChart()}));document.getElementById('newConvo').addEventListener('click',newConversation);document.getElementById('closeTicket').addEventListener('click',closeCurrentTicket);document.getElementById('escalateButton').addEventListener('click',escalateConversation);document.getElementById('convoList').addEventListener('click',e=>{const nb=e.target.closest('[data-new]');if(nb){newConversation();return}const b=e.target.closest('[data-ticket]');if(b)loadMessages(Number(b.dataset.ticket))});document.getElementById('chatForm').addEventListener('submit',e=>{e.preventDefault();const input=document.getElementById('chatInput');const text=input.value.trim();if(!text)return;input.value='';sendChat(text)});document.getElementById('chatBody').addEventListener('click',e=>{const b=e.target.closest('[data-suggest]');if(b)sendChat(b.dataset.suggest)});document.body.addEventListener('click',e=>{const s=e.target.closest('[data-select]');if(s){state.selected=Number(s.dataset.select);document.getElementById('deviceSelector').value=state.selected;activateView('dashboard');loadData()}const cf=e.target.closest('.connect-found');if(cf){const card=cf.closest('.found-card');card.querySelector('.mini-connect').hidden=false;cf.hidden=true;}const mc=e.target.closest('.mini-cancel');if(mc){const card=mc.closest('.found-card');card.querySelector('.mini-connect').hidden=true;card.querySelector('.connect-found').hidden=false;}const ok=e.target.closest('.mini-confirm');if(ok){connectFoundDevice(ok.closest('.found-card'));}const notif=e.target.closest('[data-open-ticket]');if(notif){document.getElementById('notificationPanel').classList.remove('open');activateView('suporte');loadTickets().then(()=>loadMessages(Number(notif.dataset.openTicket)))}});document.getElementById('logoutButton').addEventListener('click',()=>{location.href='logout.php'});document.getElementById('sidebarToggle').addEventListener('click',()=>{const collapsed=document.querySelector('.app').classList.toggle('sidebar-collapsed');try{localStorage.setItem('sadag_sidebar_collapsed',collapsed?'1':'0')}catch(e){}})}
 async function init(){
   bind();
+  try{if(localStorage.getItem('sadag_sidebar_collapsed')==='1')document.querySelector('.app').classList.add('sidebar-collapsed')}catch(e){}
   const hash=location.hash.replace('#','');
-  if(hash)activateView(hash);
+  activateView(hash||'dashboard');
   await refresh();
 
   // Contador "sincronizado há Xs": roda por conta própria, no ritmo do
@@ -382,15 +759,15 @@ async function init(){
   // entre uma requisição e outra.
   setInterval(tickSyncAge,1000);
 
-  // Leitura/PPM: ritmo rápido, é o dado que precisa parecer tempo real.
+  // A atualização instantânea do PPM agora vem do canal ao vivo
+  // (connectStream/SSE, aberto dentro de loadData()). Esse intervalo
+  // vira só uma rede de segurança: recalcula estatísticas/histórico
+  // completos e reconecta o canal se ele cair por algum motivo.
   setInterval(async()=>{
     try{
-      if(state.selected){
-        await loadData();
-        document.getElementById('lastUpdate').textContent=time(new Date());
-      }
+      if(state.selected)await loadData();
     }catch(e){console.error(e)}
-  },400);
+  },6000);
 
   // Lista de dispositivos/notificações: muda pouco, não precisa do mesmo ritmo.
   setInterval(async()=>{
@@ -403,18 +780,9 @@ async function init(){
 init();
 </script>
 
-<script>
-(function(){
-  function syncAerisOverview(){
-    const q=(id)=>document.getElementById(id);
-    const set=(id,val)=>{const el=q(id);if(el&&val)el.textContent=val;};
-    set('overviewLocation',q('selectedLocationLabel')?.textContent||'--');
-    set('overviewDevice',q('selectedDeviceLabel')?.textContent||'--');
-    set('overviewNetwork',q('networkStatus')?.textContent||'--');
-  }
-  syncAerisOverview();
-  setInterval(syncAerisOverview,1500);
-})();
-</script>
+<!-- VLibras: widget oficial do governo brasileiro que traduz o conteúdo da página para Libras (Língua Brasileira de Sinais), para usuários surdos. -->
+<div vw class="enabled"><div vw-access-button class="active"></div><div vw-plugin-wrapper><div class="vw-plugin-top-wrapper"></div></div></div>
+<script src="https://vlibras.gov.br/app/vlibras-plugin.js"></script>
+<script>(function(){if(window.VLibras)new window.VLibras.Widget('https://vlibras.gov.br/app')})();</script>
 </body>
 </html>

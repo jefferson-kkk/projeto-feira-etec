@@ -54,4 +54,28 @@ class LoginController{
     public function deletarLogin($id){
         $this->LoginDAO->deletarLogin($id);
     }
+
+    public function isAdmin($id){
+        return $this->LoginDAO->isAdmin($id);
+    }
+
+    public function criarTokenVerificacaoEmail($id){
+        return $this->LoginDAO->createEmailVerificationToken($id);
+    }
+
+    public function verificarTokenEmail($token){
+        return $this->LoginDAO->verifyEmailToken($token);
+    }
+
+    public function criarTokenRecuperacaoSenha($email){
+        return $this->LoginDAO->createPasswordResetToken($email);
+    }
+
+    public function getIdPorTokenRecuperacao($token){
+        return $this->LoginDAO->getIdByResetToken($token);
+    }
+
+    public function redefinirSenhaPorToken($token, $novaSenha){
+        return $this->LoginDAO->resetPasswordByToken($token, password_hash($novaSenha, PASSWORD_DEFAULT));
+    }
 }

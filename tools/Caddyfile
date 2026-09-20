@@ -1,0 +1,10 @@
+:8000 {
+	root * C:\Users\Jefferson\projeto-feira-etec
+	encode gzip
+
+	php_fastcgi 127.0.0.1:9123 {
+		trusted_proxies private_ranges
+	}
+
+	file_server
+}

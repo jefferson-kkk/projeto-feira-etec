@@ -290,7 +290,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>Aeris Guard — Dispositivos</title>
+    <title>Sadag — Dispositivos</title>
 
     <style>
 
@@ -507,7 +507,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <h1>Dispositivos</h1>
 
     <p class="subtitle">
-        Gerencie os ESP32 conectados ao Aeris Guard.
+        Gerencie os ESP32 conectados ao Sadag.
     </p>
 
 

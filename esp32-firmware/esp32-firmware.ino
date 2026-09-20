@@ -255,6 +255,13 @@ void mostrarTelaInicial() {
   display.display();
 }
 
+/*
+ * Display objetivo: só o que importa pra quem olha de longe —
+ * o PPM (estimativa, por isso o "*"), o estado por extenso, e um
+ * indicador de conexão compacto no canto. O valor bruto do ADC e o
+ * detalhe separado de Wi-Fi/servidor continuam disponíveis pelo
+ * dashboard (api/data.php), não precisam ocupar a telinha do sensor.
+ */
 void atualizarDisplay() {
   if (!oledOk) return;
 
@@ -263,29 +270,30 @@ void atualizarDisplay() {
 
   display.setTextSize(1);
   display.setCursor(0, 0);
-  display.println("AERIS GUARD - MQ-6");
-  display.drawLine(0, 9, 127, 9, SSD1306_WHITE);
+  display.print("SADAG");
 
-  display.setCursor(0, 13);
-  display.print("WiFi: ");
-  display.println(WiFi.status() == WL_CONNECTED ? "OK" : "OFF");
+  display.setCursor(94, 0);
+  if (WiFi.status() != WL_CONNECTED) {
+    display.print("OFF");
+  } else if (servidorRespondendo) {
+    display.print("ON");
+  } else {
+    display.print("WIFI");
+  }
 
-  display.setCursor(0, 23);
-  display.print("Servidor: ");
-  display.println(servidorRespondendo ? "OK" : "--");
+  display.drawLine(0, 10, 127, 10, SSD1306_WHITE);
 
-  display.setCursor(0, 35);
-  display.print("Leitura (ADC): ");
-  display.println(rawAdc);
-
-  display.setCursor(0, 45);
-  display.print("Estim.: ");
+  display.setTextSize(3);
+  display.setCursor(4, 20);
   display.print((int)estimatedPpm);
-  display.println(" ppm*");
+
+  display.setTextSize(1);
+  display.setCursor(92, 36);
+  display.print("ppm*");
 
   display.setTextSize(2);
-  display.setCursor(0, 54);
-  display.println(statusAtual);
+  display.setCursor(4, 46);
+  display.print(statusAtual);
 
   display.display();
 }

@@ -30,7 +30,11 @@ class LocationController
         $name,
         $description = null,
         $sector = null,
-        $floor = null
+        $floor = null,
+        $posX = 0,
+        $posY = 0,
+        $width = 3,
+        $depth = 3
     ) {
         $location = new Location(
             null,
@@ -38,12 +42,23 @@ class LocationController
             $name,
             $description,
             $sector,
-            $floor
+            $floor,
+            null,
+            null,
+            $posX,
+            $posY,
+            $width,
+            $depth
         );
 
         return $this->locationDAO->create(
             $location
         );
+    }
+
+    public function updateLayout($id, $userId, $posX, $posY, $width, $depth)
+    {
+        return $this->locationDAO->updateLayout($id, $userId, $posX, $posY, $width, $depth);
     }
 
     public function update(

@@ -163,7 +163,11 @@ try {
             $name,
             trim($body['description'] ?? ''),
             trim($body['sector'] ?? ''),
-            trim($body['floor'] ?? '')
+            trim($body['floor'] ?? ''),
+            isset($body['pos_x']) ? (float)$body['pos_x'] : 0,
+            isset($body['pos_y']) ? (float)$body['pos_y'] : 0,
+            isset($body['width']) ? max(0.5, (float)$body['width']) : 3,
+            isset($body['depth']) ? max(0.5, (float)$body['depth']) : 3
         );
 
         $dao = new DeviceDAO();
@@ -185,6 +189,40 @@ try {
 
             'message' =>
                 'Local cadastrado com sucesso.'
+        ]);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | SALVAR POSIÇÃO/TAMANHO DO CÔMODO NA PLANTA (editor visual 3D)
+    |--------------------------------------------------------------------------
+    */
+
+    if ($action === 'update_location_layout') {
+
+        $locationId = (int)($body['id'] ?? 0);
+
+        if ($locationId <= 0) {
+            out(422, [
+                'success' => false,
+                'message' => 'ID do ambiente obrigatório.'
+            ]);
+        }
+
+        $controller = new LocationController();
+
+        $ok = $controller->updateLayout(
+            $locationId,
+            $userId,
+            (float)($body['pos_x'] ?? 0),
+            (float)($body['pos_y'] ?? 0),
+            max(0.5, (float)($body['width'] ?? 3)),
+            max(0.5, (float)($body['depth'] ?? 3))
+        );
+
+        out(200, [
+            'success' => (bool)$ok,
+            'message' => 'Planta atualizada.'
         ]);
     }
 

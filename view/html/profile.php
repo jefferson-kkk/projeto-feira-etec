@@ -262,7 +262,7 @@ elseif (stripos($userAgent, 'iPhone') !== false) $os = 'iOS';
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Perfil — Aeris Secure</title>
+  <title>Perfil — Sadag</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -344,8 +344,8 @@ elseif (stripos($userAgent, 'iPhone') !== false) $os = 'iOS';
   <main class="page">
     <div class="topbar">
       <a class="brand" href="home.php">
-        <div class="brand-circle">A</div>
-        <div><span>Enterprise IoT</span><strong>Aeris Secure</strong></div>
+        <div class="brand-circle">S</div>
+        <div><span>Enterprise IoT</span><strong>Sadag</strong></div>
       </a>
       <div class="top-actions">
         <a class="button secondary" href="home.php">Voltar ao dashboard</a>
@@ -444,7 +444,7 @@ elseif (stripos($userAgent, 'iPhone') !== false) $os = 'iOS';
             <div class="switch-list">
               <label class="switch-row"><span><strong>Email notifications</strong><span>Resumo e avisos importantes por e-mail.</span></span><input type="checkbox" name="notify_email" <?php echo $currentUser->getnotifyEmail() ? 'checked' : ''; ?>></label>
               <label class="switch-row"><span><strong>Security alerts</strong><span>Alertas de senha, login e proteção da conta.</span></span><input type="checkbox" name="notify_security" <?php echo $currentUser->getnotifySecurity() ? 'checked' : ''; ?>></label>
-              <label class="switch-row"><span><strong>System updates</strong><span>Atualizações da plataforma Aeris.</span></span><input type="checkbox" name="notify_system" <?php echo $currentUser->getnotifySystem() ? 'checked' : ''; ?>></label>
+              <label class="switch-row"><span><strong>System updates</strong><span>Atualizações da plataforma Sadag.</span></span><input type="checkbox" name="notify_system" <?php echo $currentUser->getnotifySystem() ? 'checked' : ''; ?>></label>
               <label class="switch-row"><span><strong>Project notifications</strong><span>Mudanças e eventos dos projetos conectados.</span></span><input type="checkbox" name="notify_project" <?php echo $currentUser->getnotifyProject() ? 'checked' : ''; ?>></label>
               <label class="switch-row"><span><strong>Future gas alerts</strong><span>Alertas futuros de risco e concentração de gás.</span></span><input type="checkbox" name="notify_alerts" <?php echo $currentUser->getnotifyAlerts() ? 'checked' : ''; ?>></label>
             </div>

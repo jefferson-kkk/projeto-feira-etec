@@ -48,8 +48,23 @@ class LoginDAO {
         $this->ensureColumn('login', 'notify_alerts', "TINYINT(1) NOT NULL DEFAULT 1");
         $this->ensureColumn('login', 'created_at', "DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP");
         $this->ensureColumn('login', 'updated_at', "DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
+        $this->ensureColumn('login', 'is_admin', "TINYINT(1) NOT NULL DEFAULT 0");
+        $this->ensureColumn('login', 'email_verify_token', "VARCHAR(64) DEFAULT NULL");
+        $this->ensureColumn('login', 'email_verify_expires', "DATETIME DEFAULT NULL");
+        $this->ensureColumn('login', 'password_reset_token', "VARCHAR(64) DEFAULT NULL");
+        $this->ensureColumn('login', 'password_reset_expires', "DATETIME DEFAULT NULL");
         $this->backfillUsernames();
         $this->ensureUniqueIndex('login', 'unique_login_username', 'username');
+        /*
+         * A verificação de email é uma funcionalidade nova. Contas
+         * criadas antes dela já estavam em uso normalmente (login
+         * sempre funcionou sem essa checagem), então travá-las agora
+         * quebraria contas existentes. Por isso, contas antigas (que
+         * nunca tiveram um token de verificação gerado) são
+         * consideradas verificadas automaticamente; só cadastros novos,
+         * feitos a partir de agora, passam pelo fluxo de verificação.
+         */
+        $this->conn->exec("UPDATE login SET email_verified=1 WHERE email_verified=0 AND email_verify_token IS NULL");
     }
 
     private function ensureColumn($table, $column, $definition) {
@@ -363,6 +378,61 @@ class LoginDAO {
         }
 
         return null;
+    }
+
+    public function isAdmin($id) {
+        $stmt = $this->conn->prepare("SELECT is_admin FROM login WHERE id = :id");
+        $stmt->execute([':id' => $id]);
+        return (bool)$stmt->fetchColumn();
+    }
+
+    /*
+     * Gera um token de verificação de email (32 bytes aleatórios, em
+     * hex) válido por 24h e grava no cadastro do usuário. Retorna o
+     * token em texto puro para ser enviado por email — ele mesmo já
+     * funciona como "senha de uso único" para confirmar o email, então
+     * não precisa de hash adicional (é de curta duração e uso único).
+     */
+    public function createEmailVerificationToken($id) {
+        $token = bin2hex(random_bytes(32));
+        $stmt = $this->conn->prepare("UPDATE login SET email_verify_token = :t, email_verify_expires = DATE_ADD(NOW(), INTERVAL 24 HOUR) WHERE id = :id");
+        $stmt->execute([':t' => $token, ':id' => $id]);
+        return $token;
+    }
+
+    public function verifyEmailToken($token) {
+        $stmt = $this->conn->prepare("SELECT id FROM login WHERE email_verify_token = :t AND email_verify_expires > NOW()");
+        $stmt->execute([':t' => $token]);
+        $id = $stmt->fetchColumn();
+        if (!$id) return null;
+        $this->conn->prepare("UPDATE login SET email_verified = 1, email_verify_token = NULL, email_verify_expires = NULL WHERE id = :id")->execute([':id' => $id]);
+        return (int)$id;
+    }
+
+    public function createPasswordResetToken($email) {
+        $stmt = $this->conn->prepare("SELECT id, nome FROM login WHERE email = :email");
+        $stmt->execute([':email' => $email]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$row) return null;
+        $token = bin2hex(random_bytes(32));
+        $this->conn->prepare("UPDATE login SET password_reset_token = :t, password_reset_expires = DATE_ADD(NOW(), INTERVAL 1 HOUR) WHERE id = :id")
+            ->execute([':t' => $token, ':id' => $row['id']]);
+        return ['id' => (int)$row['id'], 'nome' => $row['nome'], 'token' => $token];
+    }
+
+    public function getIdByResetToken($token) {
+        $stmt = $this->conn->prepare("SELECT id FROM login WHERE password_reset_token = :t AND password_reset_expires > NOW()");
+        $stmt->execute([':t' => $token]);
+        $id = $stmt->fetchColumn();
+        return $id ? (int)$id : null;
+    }
+
+    public function resetPasswordByToken($token, $novaSenhaHash) {
+        $id = $this->getIdByResetToken($token);
+        if (!$id) return false;
+        $this->conn->prepare("UPDATE login SET senha = :senha, password_reset_token = NULL, password_reset_expires = NULL, updated_at = NOW() WHERE id = :id")
+            ->execute([':senha' => $novaSenhaHash, ':id' => $id]);
+        return true;
     }
 }
 ?>
