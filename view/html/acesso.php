@@ -186,7 +186,7 @@ button,input{font:inherit}button{color:inherit}a{color:inherit}
   radial-gradient(580px 500px at 8% 2%,rgba(66,227,140,.075),transparent 68%),
   radial-gradient(560px 500px at 88% 96%,rgba(66,227,140,.045),transparent 70%)}
 .brand{position:relative;z-index:5;display:flex;align-items:center;gap:12px}
-.brand-mark{width:48px;height:48px;border-radius:15px;display:grid;place-items:center;background:linear-gradient(145deg,#53e998,#19bc70);color:#06100b;font:700 22px "Space Grotesk",sans-serif;box-shadow:0 14px 40px rgba(35,205,119,.16)}
+.brand-mark{width:48px;height:48px;border-radius:15px;display:block;object-fit:cover;background:linear-gradient(145deg,#53e998,#19bc70);color:#06100b;font:700 22px "Space Grotesk",sans-serif;box-shadow:0 14px 40px rgba(35,205,119,.16)}
 .brand-copy{display:grid;gap:2px}.brand-copy small{font:700 8px "Space Grotesk",sans-serif;letter-spacing:.25em;text-transform:uppercase;color:#7f9188}.brand-copy strong{font:600 18px "Space Grotesk",sans-serif;letter-spacing:-.045em}
 .top-status{position:absolute;right:clamp(28px,4vw,62px);top:clamp(28px,4vw,62px);display:flex;align-items:center;gap:9px;color:#84958d;font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase}
 .top-status i{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 0 5px rgba(66,227,140,.055),0 0 18px rgba(66,227,140,.45);animation:pulse 2.5s ease-in-out infinite}@keyframes pulse{50%{opacity:.55;transform:scale(.75)}}
@@ -197,7 +197,7 @@ button,input{font:inherit}button{color:inherit}a{color:inherit}
 .visual-copy{max-width:670px;margin:26px 0 0;color:#96a69e;font-size:15px;line-height:1.72}
 /* layered editorial composition — several anchors, no single hero */
 .composition{position:relative;margin-top:clamp(38px,6vh,70px);height:clamp(250px,31vh,340px);border-top:1px solid var(--line);border-bottom:1px solid var(--line);overflow:hidden}
-.composition:before{content:"AERIS";position:absolute;left:-6px;top:10px;font:700 clamp(90px,13vw,210px)/.78 "Space Grotesk",sans-serif;letter-spacing:-.12em;color:rgba(240,248,243,.027);white-space:nowrap}
+.composition:before{content:"SADAG";position:absolute;left:-6px;top:10px;font:700 clamp(90px,13vw,210px)/.78 "Space Grotesk",sans-serif;letter-spacing:-.12em;color:rgba(240,248,243,.027);white-space:nowrap}
 .composition:after{content:"ENVIRONMENTAL SAFETY / CONNECTED MONITORING / 2026";position:absolute;right:0;bottom:13px;color:#52645b;font:700 7px "Space Grotesk",sans-serif;letter-spacing:.2em}
 .contours{position:absolute;inset:0;overflow:hidden;opacity:.72}
 .contours span{position:absolute;border:1px solid rgba(66,227,140,.17);border-radius:50%;transform:rotate(-18deg);box-shadow:0 0 30px rgba(66,227,140,.02)}
@@ -240,7 +240,7 @@ button,input{font:inherit}button{color:inherit}a{color:inherit}
   <div class="shell">
     <section class="visual" aria-label="Identidade Sadag">
       <div>
-        <div class="brand"><div class="brand-mark">S</div><div class="brand-copy"><small>Intelligent Safety</small><strong>Sadag</strong></div></div>
+        <div class="brand"><img class="brand-mark" src="/view/html/sadag-logo.png" alt="Sadag"><div class="brand-copy"><small>Intelligent Safety</small><strong>Sadag</strong></div></div>
         <div class="top-status"><i></i> sistema conectado</div>
       </div>
 
@@ -261,7 +261,7 @@ button,input{font:inherit}button{color:inherit}a{color:inherit}
 
       <div class="visual-bottom">
         <div class="bottom-list"><span class="active"><i></i> Plataforma Sadag</span><span><i></i> Monitoramento</span><span><i></i> Interface responsiva</span></div>
-        <div class="signature"><strong>SADAG / 01</strong>secure access</div>
+        <div class="signature"><strong>SADAG</strong>secure access</div>
       </div>
     </section>
 
@@ -341,6 +341,7 @@ const tabs=document.querySelectorAll('.tab'),panels=document.querySelectorAll('.
 function updateIndicator(activeTab){if(!activeTab||!indicator)return;const rect=activeTab.getBoundingClientRect(),parentRect=activeTab.parentElement.getBoundingClientRect();indicator.style.transform=`translateX(${rect.left-parentRect.left-4}px)`;indicator.style.width=`${rect.width}px`}
 function activateTab(tab){tabs.forEach(button=>{const panel=document.getElementById(button.dataset.panel),active=button===tab;button.classList.toggle('active',active);button.setAttribute('aria-selected',active);if(active){panel.classList.remove('hidden','outgoing');panel.classList.add('visible');setTimeout(()=>{const input=panel.querySelector('input:not([type="hidden"])');if(input)input.focus()},300)}else if(!panel.classList.contains('hidden')){panel.classList.add('outgoing');panel.classList.remove('visible');setTimeout(()=>panel.classList.add('hidden'),330)}});updateIndicator(tab)}
 tabs.forEach(tab=>tab.addEventListener('click',()=>activateTab(tab)));window.addEventListener('load',()=>updateIndicator(document.querySelector('.tab.active')));window.addEventListener('resize',()=>updateIndicator(document.querySelector('.tab.active')));
+if(new URLSearchParams(location.search).get('tab')==='cadastro'){const createTab=document.querySelector('.tab[data-panel="create"]');if(createTab)activateTab(createTab)}
 document.querySelectorAll('.password-toggle').forEach(btn=>btn.addEventListener('click',()=>{const input=document.getElementById(btn.dataset.password);if(!input)return;const visible=input.type==='text';input.type=visible?'password':'text';btn.setAttribute('aria-label',visible?'Mostrar senha':'Ocultar senha')}));
 const forgotToggle=document.getElementById('forgotToggle'),forgotForm=document.getElementById('forgotForm');if(forgotToggle&&forgotForm)forgotToggle.addEventListener('click',()=>{forgotForm.style.display=forgotForm.style.display==='none'?'block':'none'});
 const canvas=document.getElementById('background-canvas'),ctx=canvas.getContext('2d');let w=innerWidth,h=innerHeight,dpr=1,particles=[],running=true;const pointer={x:-9999,y:-9999};

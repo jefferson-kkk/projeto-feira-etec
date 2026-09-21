@@ -4,3 +4,7 @@
 /config/mail.php
 /config/claude.php
 /config/gemini.php
+/setup/logs/
+/setup/backup/
+/uploads/avatars/*
+!/uploads/avatars/.gitkeep

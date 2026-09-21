@@ -623,6 +623,53 @@ try {
 
     /*
     |--------------------------------------------------------------------------
+    | EXCLUIR DISPOSITIVO
+    |--------------------------------------------------------------------------
+    */
+
+    if ($action === 'delete_device') {
+
+        $deviceId = (int)($body['id'] ?? 0);
+
+        if ($deviceId <= 0) {
+            out(422, [
+                'success' => false,
+                'message' => 'ID do dispositivo obrigatório.'
+            ]);
+        }
+
+        $device = $dao->getById($deviceId, $userId);
+
+        if (!$device) {
+            out(404, [
+                'success' => false,
+                'message' => 'Dispositivo não encontrado.'
+            ]);
+        }
+
+        $conn = $dao->getConnection();
+
+        // Sem FK/cascade no banco: limpa manualmente o que depende
+        // do dispositivo antes de apagar, pra não deixar lixo órfão.
+        foreach (['sensor_readings', 'device_shares', 'notifications'] as $table) {
+            $stmt = $conn->prepare("DELETE FROM `$table` WHERE device_id = :id");
+            $stmt->execute([':id' => $deviceId]);
+        }
+        $stmt = $conn->prepare("UPDATE support_tickets SET device_id = NULL WHERE device_id = :id");
+        $stmt->execute([':id' => $deviceId]);
+
+        $ok = $dao->delete($deviceId, $userId);
+
+        auditManage($conn, $userId, 'device_deleted', 'devices', $deviceId, ['name' => $device->getName()], $deviceId);
+
+        out(200, [
+            'success' => (bool)$ok,
+            'message' => $ok ? 'Dispositivo removido.' : 'Não foi possível remover o dispositivo.'
+        ]);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
     | AÇÃO INVÁLIDA
     |--------------------------------------------------------------------------
     */

@@ -155,8 +155,8 @@ if ($requestMethod === 'POST') {
         .brand-mark{
             width:38px;
             height:38px;
-            display:grid;
-            place-items:center;
+            display:block;
+            object-fit:cover;
             border-radius:11px;
             background:linear-gradient(145deg,#66f2aa,#20c879);
             color:#06130d;
@@ -256,7 +256,7 @@ if ($requestMethod === 'POST') {
         }
 
         .visual::after{
-            content:"AERIS";
+            content:"SADAG";
             position:absolute;
             right:22px;
             bottom:-17px;
@@ -1059,10 +1059,10 @@ if ($requestMethod === 'POST') {
 
     <header class="topbar">
         <a class="brand" href="home.php" aria-label="Voltar ao Sadag">
-            <span class="brand-mark">S</span>
+            <img class="brand-mark" src="/view/html/sadag-logo.png" alt="Sadag">
 
             <span class="brand-text">
-                <small>Enterprise IoT</small>
+                <small>Monitoramento IoT</small>
                 <strong>Sadag</strong>
             </span>
         </a>
@@ -1172,7 +1172,7 @@ if ($requestMethod === 'POST') {
             <div class="visual-bottom">
                 <span><i></i> IoT conectado</span>
                 <span><i></i> Identidade única</span>
-                <span><i></i> Aeris Signal</span>
+                <span><i></i> Sadag Signal</span>
             </div>
 
         </div>
