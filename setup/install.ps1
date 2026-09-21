@@ -10,15 +10,50 @@
 
 param(
     [switch]$PrepararFlutter,
-    [switch]$PrepararArduino
+    [switch]$PrepararArduino,
+    # Permite pular a instalacao automatica de PHP/MySQL/Caddy e voltar
+    # ao comportamento antigo, de so apontar o que falta.
+    [switch]$SemInstalarDependencias,
+    [string]$PhpBranch = '8.3'
 )
 
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'lib.ps1')
+. (Join-Path $PSScriptRoot 'installers.ps1')
 Initialize-SetupDirs
 
 $script:CriticalFailures = @()
 $script:Warnings = @()
+
+# Sem isto, qualquer erro inesperado com $ErrorActionPreference = 'Stop'
+# encerra o script no meio, sem relatorio e sem apontar onde parou.
+trap {
+    Write-Host ''
+    Write-Host '[ERRO] O instalador parou por um erro inesperado:' -ForegroundColor Red
+    Write-Host "  $($_.Exception.Message)" -ForegroundColor Red
+    Write-Host "  em: $($_.InvocationInfo.ScriptName):$($_.InvocationInfo.ScriptLineNumber)" -ForegroundColor Red
+    Write-Log "Erro inesperado: $(Protect-Secret $_.Exception.Message)" 'ERRO'
+    Write-Log "Origem: $($_.InvocationInfo.ScriptName):$($_.InvocationInfo.ScriptLineNumber)" 'ERRO'
+    Write-Host "Log completo: $script:LogFile" -ForegroundColor Red
+    exit 1
+}
+
+# Instala um pacote via winget de forma realmente nao-interativa.
+# Sem --disable-interactivity o winget pode ficar parado esperando uma
+# resposta que ninguem vai digitar (o instalador "trava" sem dizer nada),
+# e sem conferir $LASTEXITCODE uma falha passava como sucesso: executavel
+# externo que retorna erro nao lanca excecao, e o "| Out-Null" original
+# ainda engolia a mensagem.
+function Install-WingetPackage {
+    param([Parameter(Mandatory = $true)][string]$Id)
+    $out = Invoke-Native -IncludeStdErr { & winget install --id $Id -e --source winget --accept-package-agreements --accept-source-agreements --silent --disable-interactivity }
+    $code = $script:LastNativeExitCode
+    if ($code -ne 0) {
+        Write-Log "winget install $Id terminou com codigo $code." 'AVISO'
+        Write-Log ('Ultimas linhas do winget: ' + (($out | Where-Object { $_ -match '\S' } | Select-Object -Last 5) -join ' | ')) 'INFO'
+    }
+    return ($code -eq 0)
+}
 
 function Step-Header {
     param([int]$N, [int]$Total, [string]$Title)
@@ -66,7 +101,7 @@ if (-not $git.Found) {
     if ($winget.Found) {
         Write-Log 'Instalando Git via winget (Git.Git)...' 'INSTALAR'
         try {
-            & winget install --id Git.Git -e --source winget --accept-package-agreements --accept-source-agreements | Out-Null
+            $null = Install-WingetPackage -Id 'Git.Git'
             $env:Path = [System.Environment]::GetEnvironmentVariable('Path', 'Machine') + ';' + [System.Environment]::GetEnvironmentVariable('Path', 'User')
             $git = Test-GitEnv
             if ($git.Found) { Write-Log "Git instalado: $($git.Version)" 'OK' }
@@ -115,7 +150,7 @@ if (-not $vscode.Found) {
     Write-Log 'VS Code nao encontrado no PATH.' 'INSTALAR'
     if ($winget.Found) {
         try {
-            & winget install --id Microsoft.VisualStudioCode -e --source winget --accept-package-agreements --accept-source-agreements | Out-Null
+            $null = Install-WingetPackage -Id 'Microsoft.VisualStudioCode'
             $env:Path = [System.Environment]::GetEnvironmentVariable('Path', 'Machine') + ';' + [System.Environment]::GetEnvironmentVariable('Path', 'User')
             $vscode = Test-VSCodeEnv
             if ($vscode.Found) { Write-Log "VS Code instalado: $($vscode.Version)" 'OK' }
@@ -137,8 +172,9 @@ if ($vscode.Found) {
         } else {
             Write-Log "Instalando extensao necessaria '$($ext.Name)'. Motivo: $($ext.Reason)" 'INSTALAR'
             try {
-                & code --install-extension $ext.Id --force | Out-Null
-                Write-Log "Extensao '$($ext.Name)' instalada." 'OK'
+                $null = Invoke-Native -IncludeStdErr { & code --install-extension $ext.Id --force }
+                if ($script:LastNativeExitCode -eq 0) { Write-Log "Extensao '$($ext.Name)' instalada." 'OK' }
+                else { $script:Warnings += "Nao foi possivel instalar a extensao $($ext.Name) automaticamente (codigo $($script:LastNativeExitCode))." }
             } catch {
                 $script:Warnings += "Nao foi possivel instalar a extensao $($ext.Name) automaticamente."
             }
@@ -154,8 +190,22 @@ if ($vscode.Found) {
 Step-Header 4 $TotalSteps 'PHP e extensoes'
 # -----------------------------------------------------------------
 $php = Test-PhpEnv
+if (-not $php.Found -and -not $SemInstalarDependencias) {
+    Write-Log 'PHP nao encontrado no PATH. Instalando a partir da fonte oficial (windows.php.net).' 'INSTALAR'
+    $null = Install-VcRedist
+    try {
+        if (Install-PhpRuntime -Branch $PhpBranch) { $php = Test-PhpEnv }
+    } catch {
+        Write-Log "Falha ao instalar o PHP: $($_.Exception.Message)" 'ERRO'
+    }
+    if (-not $php.Found) {
+        $script:CriticalFailures += 'Nao foi possivel instalar o PHP automaticamente. Baixe o pacote nts x64 em https://windows.php.net/download/, extraia em C:\php e rode o instalador de novo.'
+    }
+}
 if (-not $php.Found) {
-    $script:CriticalFailures += 'PHP nao encontrado no PATH. Instale PHP 8.x (thread-safe ou nao, x64) e adicione ao PATH manualmente -- este projeto ja espera C:\php\php.exe. Fonte oficial: https://windows.php.net/download/'
+    if ($SemInstalarDependencias) {
+        $script:CriticalFailures += 'PHP nao encontrado no PATH e a flag -SemInstalarDependencias foi usada. Instale PHP 8.x (nts, x64) em C:\php ou rode sem a flag para instalar automaticamente.'
+    }
 } else {
     Write-Log "PHP encontrado: $($php.Version -join ' ') em $($php.Path)." 'OK'
     Write-Log "php.ini: $($php.IniPath)" 'INFO'
@@ -201,6 +251,17 @@ if (-not $php.Found) {
 Step-Header 5 $TotalSteps 'Banco de dados (MySQL)'
 # -----------------------------------------------------------------
 $mysql = Test-MySqlEnv
+if (-not $mysql.ServiceName -and -not $mysql.PortListening -and -not $SemInstalarDependencias) {
+    Write-Log 'Nenhum MySQL instalado. Instalando o Community Server (pacote ZIP oficial da Oracle).' 'INSTALAR'
+    $null = Install-VcRedist
+    try {
+        $dbPass = $env:AERIS_DB_PASSWORD
+        if (-not $dbPass) { $dbPass = 'senaisp' }
+        if (Install-MySqlServer -RootPassword $dbPass) { $mysql = Test-MySqlEnv }
+    } catch {
+        Write-Log "Falha ao instalar o MySQL: $($_.Exception.Message)" 'ERRO'
+    }
+}
 if ($mysql.ServiceName) {
     Write-Log "Servico do MySQL encontrado: $($mysql.ServiceName)." 'OK'
     if ($mysql.ServiceRunning) {
@@ -227,7 +288,11 @@ if ($mysql.ServiceName) {
     if ($mysql.PortListening) {
         Write-Log 'Porem algo ja esta escutando na porta 3306 -- pode ser um MySQL rodando fora de servico Windows (ex.: XAMPP). Nao mexendo nisso.' 'INFO'
     } else {
-        $script:CriticalFailures += 'MySQL/MariaDB nao parece estar instalado nem rodando (sem servico, sem porta 3306 ativa). Instale o MySQL Server 8.x pela fonte oficial (https://dev.mysql.com/downloads/mysql/) e rode este instalador de novo. O instalador NAO baixa o MySQL sozinho para evitar reconfigurar um servidor ja existente por engano.'
+        if ($SemInstalarDependencias) {
+            $script:CriticalFailures += 'MySQL/MariaDB nao esta instalado e a flag -SemInstalarDependencias foi usada. Rode o instalador sem a flag para baixar e configurar o MySQL Community Server automaticamente, ou instale pela fonte oficial: https://dev.mysql.com/downloads/mysql/'
+        } else {
+            $script:CriticalFailures += 'Nao foi possivel instalar o MySQL automaticamente. Instale o MySQL Server 8.x pela fonte oficial (https://dev.mysql.com/downloads/mysql/) e rode este instalador de novo. Quando ja existe um servico de MySQL ou algo na porta 3306, o instalador nao mexe nele de proposito, para nao reconfigurar um servidor ja em uso.'
+        }
     }
 }
 
@@ -251,19 +316,19 @@ if ($mysql.PortListening) {
                     try {
                         $pass = $env:AERIS_DB_PASSWORD
                         if (-not $pass) { $pass = 'senaisp' }
-                        $sql = Get-Content $schemaFile -Raw
                         $probe = @"
 <?php
 `$pdo = new PDO('mysql:host=localhost;dbname=aeris;charset=utf8mb4', 'root', '$pass');
 `$pdo->exec(file_get_contents('$($schemaFile -replace '\\','\\\\')'));
 echo 'OK';
 "@
-                        $tmp = [System.IO.Path]::GetTempFileName() + '.php'
+                        $tmp = Join-Path ([System.IO.Path]::GetTempPath()) ('sadag_schema_{0}.php' -f ([guid]::NewGuid().ToString('N')))
                         Set-Content -Path $tmp -Value $probe -Encoding ascii
-                        $out = (& (Get-ToolPath 'php') $tmp 2>&1)
+                        $phpExe = Get-ToolPath 'php'
+                        $out = (Invoke-Native -IncludeStdErr { & $phpExe $tmp }) -join ' '
                         Remove-Item $tmp -ErrorAction SilentlyContinue
                         if ($out -match 'OK') { Write-Log 'Schema importado (somente tabelas que faltavam).' 'OK' }
-                        else { $script:Warnings += "Falha ao importar schema: $out" }
+                        else { $script:Warnings += "Falha ao importar schema: $(Protect-Secret $out)" }
                     } catch {
                         $script:Warnings += "Falha ao importar schema: $($_.Exception.Message)"
                     }
@@ -283,6 +348,18 @@ echo 'OK';
 Step-Header 6 $TotalSteps 'Caddy + PHP FastCGI (servidor local do projeto)'
 # -----------------------------------------------------------------
 $caddy = Test-CaddyEnv
+if (-not $caddy.LocalExeFound -and -not $SemInstalarDependencias) {
+    Write-Log 'tools\caddy.exe nao encontrado (ele fica fora do Git, veja .gitignore).' 'INSTALAR'
+    try {
+        if (Install-CaddyBinary) { $caddy = Test-CaddyEnv }
+    } catch {
+        Write-Log "Falha ao baixar o Caddy: $($_.Exception.Message)" 'ERRO'
+    }
+}
+# O Caddyfile versionado aponta para o caminho de outra maquina; sem
+# este ajuste o Caddy sobe mas serve uma pasta que nao existe.
+$null = Repair-Caddyfile
+$caddy = Test-CaddyEnv
 if ($caddy.LocalExeFound) {
     Write-Log "Caddy do projeto encontrado: $($caddy.LocalExePath) ($($caddy.Version))." 'OK'
     Write-Log 'PULANDO download do Caddy -- o projeto ja usa um binario proprio em tools\caddy.exe (nao e um Caddy instalado globalmente).' 'PULAR'
@@ -293,11 +370,7 @@ if ($caddy.LocalExeFound) {
         $script:CriticalFailures += 'tools\Caddyfile nao encontrado. Sem ele o Caddy nao sabe como servir o projeto.'
     }
 } else {
-    Write-Log 'tools\caddy.exe nao encontrado (ele fica fora do Git, veja .gitignore).' 'INSTALAR'
-    Write-Host 'Baixe o Caddy oficial (https://caddyserver.com/download) e salve o executavel como tools\caddy.exe. Deseja que eu tente abrir a pagina de download agora? (S/N)' -ForegroundColor Yellow
-    $resp = Read-Host '  Resposta'
-    if ($resp -match '^[sS]') { Start-Process 'https://caddyserver.com/download' }
-    $script:CriticalFailures += 'tools\caddy.exe ausente. Baixe manualmente da fonte oficial e coloque em tools\caddy.exe, depois rode o instalador de novo.'
+    $script:CriticalFailures += 'tools\caddy.exe ausente e o download automatico nao funcionou. Baixe em https://caddyserver.com/download, salve como tools\caddy.exe e rode o instalador de novo.'
 }
 
 if ($caddy.LocalExeFound -and $caddy.CaddyfileFound -and $caddy.ValidateOk) {
@@ -370,8 +443,8 @@ if ($arduino.IdeFound -or $arduino.CliFound) {
         Write-Log 'Flag -PrepararArduino usada.' 'INSTALAR'
         if ($winget.Found) {
             try {
-                & winget install --id ArduinoSA.IDE.stable -e --source winget --accept-package-agreements --accept-source-agreements | Out-Null
-                Write-Log 'Arduino IDE instalada via winget.' 'OK'
+                if (Install-WingetPackage -Id 'ArduinoSA.IDE.stable') { Write-Log 'Arduino IDE instalada via winget.' 'OK' }
+                else { $script:Warnings += 'winget nao conseguiu instalar a Arduino IDE. Baixe manualmente em https://www.arduino.cc/en/software' }
             } catch {
                 $script:Warnings += "Falha ao instalar Arduino IDE via winget: $($_.Exception.Message). Baixe manualmente em https://www.arduino.cc/en/software"
             }

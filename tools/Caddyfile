@@ -1,5 +1,5 @@
 :8000 {
-	root * C:\Users\Jefferson\projeto-feira-etec
+	root * C:\Users\Jorn\projeto-feira-etec
 	encode gzip
 
 	php_fastcgi 127.0.0.1:9123 {
@@ -8,3 +8,4 @@
 
 	file_server
 }
+

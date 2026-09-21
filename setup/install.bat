@@ -13,7 +13,24 @@ if %errorLevel% NEQ 0 (
     echo Este instalador precisa de privilegios de administrador
     echo ^(para servico do MySQL, php.ini e regra de firewall^).
     echo Solicitando elevacao...
-    powershell -NoProfile -Command "Start-Process -FilePath '%~f0' -ArgumentList '%*' -Verb RunAs"
+    rem O parametro -ArgumentList do Start-Process NAO aceita string vazia:
+    rem passar -ArgumentList '' (caso normal, sem argumentos) derruba o
+    rem PowerShell com "o argumento e nulo ou vazio" e a elevacao nunca
+    rem acontece. Por isso so passamos -ArgumentList quando ha argumentos.
+    if "%~1"=="" (
+        powershell -NoProfile -Command "Start-Process -FilePath '%~f0' -Verb RunAs"
+    ) else (
+        powershell -NoProfile -Command "Start-Process -FilePath '%~f0' -ArgumentList '%*' -Verb RunAs"
+    )
+    if errorlevel 1 (
+        echo.
+        echo Nao foi possivel abrir o instalador como administrador
+        echo ^(UAC cancelado ou bloqueado^).
+        echo Clique com o botao direito em install.bat e escolha
+        echo "Executar como administrador".
+        echo.
+        pause
+    )
     exit /b
 )
 

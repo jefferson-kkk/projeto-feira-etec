@@ -7,7 +7,20 @@ timeout /t 1 >nul
 
 set PHP_FCGI_CHILDREN=8
 set PHP_FCGI_MAX_REQUESTS=0
-start "PHP FastCGI" /MIN C:\php\php-cgi.exe -b 127.0.0.1:9123
+
+rem O setup instala o PHP em C:\php, mas se alguem ja tinha o PHP em
+rem outro lugar (e no PATH), usamos o que existir em vez de falhar.
+set "PHP_CGI=C:\php\php-cgi.exe"
+if not exist "%PHP_CGI%" (
+    for %%I in (php-cgi.exe) do set "PHP_CGI=%%~$PATH:I"
+)
+if not exist "%PHP_CGI%" (
+    echo ERRO: php-cgi.exe nao encontrado nem em C:\php nem no PATH.
+    echo Rode setup\install.bat para instalar o PHP.
+    pause
+    exit /b 1
+)
+start "PHP FastCGI" /MIN "%PHP_CGI%" -b 127.0.0.1:9123
 
 timeout /t 1 >nul
 

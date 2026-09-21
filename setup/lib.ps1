@@ -52,10 +52,49 @@ function Test-IsAdmin {
 }
 
 function Get-ToolPath {
-    param([string]$Name)
+    param([string]$Name, [string[]]$FallbackDirs = @())
     $cmd = Get-Command $Name -ErrorAction SilentlyContinue
     if ($cmd) { return $cmd.Source }
+    # O Get-Command nao enxerga sempre uma pasta recem-adicionada ao PATH
+    # na mesma sessao. Sem esta busca direta, o instalador reportava
+    # [FALHA] no PHP logo depois de te-lo instalado com sucesso.
+    foreach ($dir in $FallbackDirs) {
+        $candidate = Join-Path $dir "$Name.exe"
+        if (Test-Path $candidate) { return $candidate }
+    }
     return $null
+}
+
+# O Windows PowerShell 5.1 transforma cada linha que um programa externo
+# escreve em stderr num ErrorRecord. Como install.ps1 roda com
+# $ErrorActionPreference = 'Stop', bastava o php imprimir um aviso de
+# startup ou o 'caddy validate' logar no stderr (coisa que ele SEMPRE faz)
+# para o instalador inteiro morrer no meio da deteccao, sem relatorio.
+# Toda chamada a executavel externo passa por aqui, que isola esse
+# comportamento e devolve so as linhas de texto.
+# O codigo de saida real fica em $script:LastNativeExitCode.
+function Invoke-Native {
+    param(
+        [Parameter(Mandatory = $true)][scriptblock]$Command,
+        [switch]$IncludeStdErr
+    )
+    $previous = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try {
+        $raw = & $Command 2>&1
+        $script:LastNativeExitCode = $LASTEXITCODE
+        $lines = @()
+        foreach ($item in $raw) {
+            if ($item -is [System.Management.Automation.ErrorRecord]) {
+                if ($IncludeStdErr) { $lines += $item.ToString() }
+            } else {
+                $lines += [string]$item
+            }
+        }
+        return $lines
+    } finally {
+        $ErrorActionPreference = $previous
+    }
 }
 
 function Test-TcpPortListening {
@@ -91,14 +130,14 @@ function Test-GitEnv {
     if (-not $path) { return $result }
     $result.Found = $true
     $result.Path = $path
-    $result.Version = (& git --version) -replace 'git version ', ''
-    $result.UserName = (& git config --global user.name 2>$null)
-    $result.UserEmail = (& git config --global user.email 2>$null)
+    $result.Version = ((Invoke-Native { & git --version } | Select-Object -First 1) -replace 'git version ', '')
+    $result.UserName = (Invoke-Native { & git config --global user.name } | Select-Object -First 1)
+    $result.UserEmail = (Invoke-Native { & git config --global user.email } | Select-Object -First 1)
     Push-Location $script:ProjectRoot
     try {
-        $isRepo = (& git rev-parse --is-inside-work-tree 2>$null)
+        $isRepo = (Invoke-Native { & git rev-parse --is-inside-work-tree } | Select-Object -First 1)
         if ($isRepo -eq 'true') {
-            $remoteLine = (& git remote -v 2>$null | Select-Object -First 1)
+            $remoteLine = (Invoke-Native { & git remote -v } | Select-Object -First 1)
             if ($remoteLine) { $result.Remote = ($remoteLine -split '\s+')[1] }
         }
     } finally { Pop-Location }
@@ -111,9 +150,11 @@ function Test-GhCli {
     if (-not $path) { return $result }
     $result.Found = $true
     $result.Path = $path
-    $result.Version = ((& gh --version 2>$null) -split "`n")[0]
-    $authOut = (& gh auth status 2>&1)
-    $result.AuthOk = ($LASTEXITCODE -eq 0)
+    $result.Version = (Invoke-Native { & gh --version } | Select-Object -First 1)
+    # 'gh auth status' escreve o relatorio inteiro no stderr mesmo quando da
+    # certo — o que importa aqui e so o codigo de saida.
+    $null = Invoke-Native -IncludeStdErr { & gh auth status }
+    $result.AuthOk = ($script:LastNativeExitCode -eq 0)
     return $result
 }
 
@@ -123,8 +164,8 @@ function Test-VSCodeEnv {
     if (-not $path) { return $result }
     $result.Found = $true
     $result.Path = $path
-    $result.Version = ((& code --version 2>$null) -split "`n")[0]
-    $result.Extensions = (& code --list-extensions 2>$null)
+    $result.Version = (Invoke-Native { & code --version } | Select-Object -First 1)
+    $result.Extensions = @(Invoke-Native { & code --list-extensions })
     return $result
 }
 
@@ -141,7 +182,7 @@ $script:OptionalVsCodeExtensions = @(
 )
 
 function Test-PhpEnv {
-    $path = Get-ToolPath 'php'
+    $path = Get-ToolPath 'php' -FallbackDirs @('C:\php')
     $result = [ordered]@{
         Found = $false; Path = $null; Version = $null; IniPath = $null
         Modules = @(); Missing = @(); OptionalMissing = @()
@@ -149,10 +190,11 @@ function Test-PhpEnv {
     if (-not $path) { return $result }
     $result.Found = $true
     $result.Path = $path
-    $verLine = (& php --version 2>$null | Select-Object -First 1)
-    $result.Version = $verLine
-    $result.IniPath = (& php --ini 2>$null | Select-String 'Loaded Configuration File:' | ForEach-Object { ($_ -split ':\s*', 2)[1].Trim() })
-    $result.Modules = (& php -m 2>$null)
+    # Sempre pelo caminho resolvido, nunca pelo nome 'php': quando o PHP
+    # acabou de ser instalado ele ainda pode nao estar visivel pelo nome.
+    $result.Version = (Invoke-Native { & $path --version } | Select-Object -First 1)
+    $result.IniPath = (Invoke-Native { & $path --ini } | Select-String 'Loaded Configuration File:' | ForEach-Object { ($_ -split ':\s*', 2)[1].Trim() } | Select-Object -First 1)
+    $result.Modules = @(Invoke-Native { & $path -m })
 
     # Extensoes REALMENTE usadas no codigo (confirmado por grep no
     # projeto, nao por suposicao): pdo_mysql, curl, openssl, fileinfo.
@@ -185,7 +227,7 @@ function Test-MySqlEnv {
 
     # Mesmas credenciais que model/Connection.php usa de verdade —
     # sem inventar host/usuario diferente do que o projeto espera.
-    $php = Get-ToolPath 'php'
+    $php = Get-ToolPath 'php' -FallbackDirs @('C:\php')
     if ($php -and $result.PortListening) {
         $probe = @'
 <?php
@@ -202,16 +244,23 @@ try {
     echo "ERR|" . $e->getMessage();
 }
 '@
-        $tmpFile = [System.IO.Path]::GetTempFileName() + '.php'
+        # GetTempFileName() ja cria o arquivo .tmp; usar o nome dele + '.php'
+        # deixava um .tmp orfao no disco a cada execucao. Aqui montamos o
+        # caminho .php direto e apagamos exatamente o que criamos.
+        $tmpFile = Join-Path ([System.IO.Path]::GetTempPath()) ('sadag_probe_{0}.php' -f ([guid]::NewGuid().ToString('N')))
         Set-Content -Path $tmpFile -Value $probe -Encoding ascii
         try {
-            $out = (& $php $tmpFile 2>$null)
-            if ($out -like 'OK|*') {
+            # O php pode imprimir avisos de startup antes da resposta, entao
+            # procuramos a marca OK|/ERR| em vez de assumir a primeira linha.
+            $out = (Invoke-Native { & $php $tmpFile }) -join "`n"
+            if ($out -match '(?m)^OK\|(.*)$') {
                 $result.CanConnect = $true
-                $tables = $out.Substring(3)
-                if ($tables) { $result.TablesFound = $tables -split ',' }
-            } elseif ($out -like 'ERR|*') {
-                $result.ConnectError = $out.Substring(4)
+                $tables = $Matches[1].Trim()
+                if ($tables) { $result.TablesFound = @($tables -split ',') }
+            } elseif ($out -match '(?ms)^ERR\|(.*)$') {
+                $result.ConnectError = $Matches[1].Trim()
+            } else {
+                $result.ConnectError = $out
             }
         } finally {
             Remove-Item $tmpFile -ErrorAction SilentlyContinue
@@ -229,12 +278,14 @@ function Test-CaddyEnv {
         ValidateOk = $false; ValidateOutput = $null; PortListening = $false
     }
     if ($result.LocalExeFound) {
-        $result.Version = (& $localExe version 2>$null)
+        $result.Version = (Invoke-Native { & $localExe version } | Select-Object -First 1)
         if ($result.CaddyfileFound) {
             Push-Location (Join-Path $script:ProjectRoot 'tools')
             try {
-                $out = (& $localExe validate --config Caddyfile 2>&1)
-                $result.ValidateOk = ($LASTEXITCODE -eq 0)
+                # 'caddy validate' loga no stderr mesmo quando o arquivo esta
+                # correto; o veredito de verdade e o codigo de saida.
+                $out = Invoke-Native -IncludeStdErr { & $localExe validate --config Caddyfile }
+                $result.ValidateOk = ($script:LastNativeExitCode -eq 0)
                 $result.ValidateOutput = ($out -join ' ')
             } finally { Pop-Location }
         }
@@ -244,7 +295,7 @@ function Test-CaddyEnv {
 }
 
 function Test-PhpCgiEnv {
-    $path = Get-ToolPath 'php-cgi'
+    $path = Get-ToolPath 'php-cgi' -FallbackDirs @('C:\php')
     $result = [ordered]@{ Found = ([bool]$path); Path = $path; PortListening = (Test-TcpPortListening -Port 9123) }
     return $result
 }
