@@ -41,7 +41,7 @@ class ClaudeClient
             ],
             CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4,
             CURLOPT_CONNECTTIMEOUT => 5,
-            CURLOPT_TIMEOUT => 15,
+            CURLOPT_TIMEOUT => 45,
         ]);
 
         $response = curl_exec($ch);

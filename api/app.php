@@ -424,6 +424,19 @@ if ($action === 'support_close') {
     audit($db, 'support_ticket_closed', 'support_tickets', $ticket, null, $userId);
     out(200, ['success' => true]);
 }
+if ($action === 'support_delete') {
+    $d = body();
+    $ticket = (int)($d['ticket_id'] ?? 0);
+    $q = $db->prepare("SELECT id, subject FROM support_tickets WHERE id=:t AND user_id=:u");
+    $q->execute([':t' => $ticket, ':u' => $userId]);
+    $t = $q->fetch(PDO::FETCH_ASSOC);
+    if (!$t) out(404, ['success' => false, 'message' => 'Conversa não encontrada.']);
+    // ON DELETE CASCADE em support_messages.ticket_id apaga as
+    // mensagens junto -- não precisa de uma segunda query aqui.
+    $db->prepare("DELETE FROM support_tickets WHERE id=:t AND user_id=:u")->execute([':t' => $ticket, ':u' => $userId]);
+    audit($db, 'support_ticket_deleted', 'support_tickets', $ticket, ['subject' => $t['subject']], $userId);
+    out(200, ['success' => true]);
+}
 /*
  * Anti-spam simples: no máximo 30 mensagens a cada 5 minutos por
  * usuário (soma de todas as conversas), pra não estourar a cota
@@ -438,13 +451,20 @@ function checkSupportRateLimit($db, $userId)
     }
 }
 if ($action === 'support_create') {
+    // GeminiClient agora tenta 2x cada chamada (o modelo gratuito
+    // as vezes fica sobrecarregado -- HTTP 503 -- e uma segunda
+    // tentativa resolve na maioria das vezes). Pior caso aqui:
+    // titulo (10s+3s+10s) + resposta (45s+3s+45s) = ~116s.
+    set_time_limit(150);
     $d = body();
     $message = trim($d['message'] ?? '');
     $deviceId = (int)($d['device_id'] ?? 0) ?: null;
     if ($message === '') out(422, ['success' => false, 'message' => 'Escreva uma mensagem para começar.']);
     if (strlen($message) > 2000) out(422, ['success' => false, 'message' => 'Mensagem muito longa (máximo 2000 caracteres).']);
     checkSupportRateLimit($db, $userId);
-    $subject = strlen($message) > 60 ? substr($message, 0, 60) . '…' : $message;
+    // Titulo gerado pela IA (como o ChatGPT faz), com fallback pro
+    // recorte simples da mensagem se a IA nao estiver disponivel.
+    $subject = AiReply::generateTitle($message) ?? (strlen($message) > 60 ? substr($message, 0, 60) . '…' : $message);
     $db->beginTransaction();
     try {
         $t = $db->prepare("INSERT INTO support_tickets(user_id,device_id,subject,category) VALUES(:u,:d,:s,'Conversa')");
@@ -465,6 +485,9 @@ if ($action === 'support_create') {
     }
 }
 if ($action === 'support_send') {
+    // Mesma folga de support_create: com 2 tentativas de ate 45s cada
+    // (GeminiClient), o pior caso passa dos 90s.
+    set_time_limit(150);
     $d = body();
     $ticket = (int)($d['ticket_id'] ?? 0);
     $message = trim($d['message'] ?? '');

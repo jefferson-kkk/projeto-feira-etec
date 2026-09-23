@@ -7,6 +7,11 @@ CREATE TABLE IF NOT EXISTS locations (
     floor VARCHAR(50) DEFAULT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    -- Posicao/tamanho do comodo na planta 3D (LocationDAO::ensureColumn).
+    pos_x DECIMAL(6,2) NOT NULL DEFAULT 0,
+    pos_y DECIMAL(6,2) NOT NULL DEFAULT 0,
+    width DECIMAL(6,2) NOT NULL DEFAULT 3,
+    depth DECIMAL(6,2) NOT NULL DEFAULT 3,
     INDEX idx_locations_user (user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -42,6 +47,8 @@ CREATE TABLE IF NOT EXISTS sensor_readings (
     reading_status VARCHAR(32) NOT NULL,
     wifi_rssi INT DEFAULT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    -- Leitura bruta do ADC (0-4095), alem da estimativa em ppm (ReadingDAO::ensureColumn).
+    raw_adc INT DEFAULT NULL,
     INDEX idx_readings_device_time (device_id, created_at),
     CONSTRAINT fk_readings_device FOREIGN KEY (device_id) REFERENCES devices(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -66,6 +73,9 @@ CREATE TABLE IF NOT EXISTS notifications (
     severity VARCHAR(20) NOT NULL DEFAULT 'info',
     is_read TINYINT(1) NOT NULL DEFAULT 0,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    -- ID do registro relacionado (ex: ticket de suporte), usado para
+    -- levar direto ao clicar na notificacao (api/app.php).
+    related_id BIGINT DEFAULT NULL,
     INDEX idx_notifications_user (user_id,is_read,created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -93,6 +103,10 @@ CREATE TABLE IF NOT EXISTS support_tickets (
     status VARCHAR(30) NOT NULL DEFAULT 'aberto',
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    -- Marca se a conversa foi encaminhada para um humano (api/app.php,
+    -- action=support_escalate) -- enquanto 0, o Sadag Assist continua
+    -- respondendo sozinho.
+    escalated TINYINT(1) NOT NULL DEFAULT 0,
     INDEX idx_ticket_user (user_id,updated_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -104,6 +118,7 @@ CREATE TABLE IF NOT EXISTS support_messages (
     message TEXT NOT NULL,
     email_sent TINYINT(1) NOT NULL DEFAULT 0,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    is_read TINYINT(1) NOT NULL DEFAULT 0,
     INDEX idx_support_ticket (ticket_id,created_at),
     CONSTRAINT fk_support_ticket FOREIGN KEY (ticket_id) REFERENCES support_tickets(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

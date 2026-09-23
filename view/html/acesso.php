@@ -240,7 +240,7 @@ button,input{font:inherit}button{color:inherit}a{color:inherit}
   <div class="shell">
     <section class="visual" aria-label="Identidade Sadag">
       <div>
-        <div class="brand"><img class="brand-mark" src="/view/html/sadag-logo.png" alt="Sadag"><div class="brand-copy"><small>Intelligent Safety</small><strong>Sadag</strong></div></div>
+        <div class="brand"><img class="brand-mark" src="/view/html/sadag-mark.png" alt="Sadag"><div class="brand-copy"><small>Intelligent Safety</small><strong>Sadag</strong></div></div>
         <div class="top-status"><i></i> sistema conectado</div>
       </div>
 

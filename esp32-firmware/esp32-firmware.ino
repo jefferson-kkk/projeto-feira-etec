@@ -94,8 +94,12 @@
 // //                    sensor e substitua converterParaPpmEstimado().
 // // =====================================================
 
-// #define NUM_LEITURAS 10
-// #define INTERVALO_LEITURA_MS 15
+// // Reduzido de 10x15ms (150ms) para 5x5ms (25ms) por leitura -- o
+// // display e o envio ficam bem mais responsivos. Ainda faz media de
+// // varias amostras (nao le só uma vez) para não perder a suavização
+// // contra ruído do ADC, só faz isso mais rápido.
+// #define NUM_LEITURAS 5
+// #define INTERVALO_LEITURA_MS 5
 
 // #define ADC_MIN 0
 // #define ADC_MAX 4095
@@ -127,7 +131,7 @@
 // // INTERVALOS (não bloqueantes)
 // // =====================================================
 
-// #define INTERVALO_ENVIO_MS     500UL    // envia leitura para /receive.php (perto do limite util do sensor)
+// #define INTERVALO_ENVIO_MS     250UL    // taxa de monitoramento -- envia leitura para /receive.php mais seguido
 // #define INTERVALO_ANUNCIO_MS   10000UL  // avisa presença para /app.php?action=announce
 // #define INTERVALO_RECONEXAO_MS 5000UL   // intervalo entre tentativas de reconexão Wi-Fi
 // #define TIMEOUT_WIFI_MS        15000UL  // tempo máximo esperando conectar
@@ -580,5 +584,8 @@
 //   Serial.print(" | WiFi: ");
 //   Serial.println(WiFi.status() == WL_CONNECTED ? String(WiFi.RSSI()) + " dBm" : "OFFLINE");
 
-//   delay(50);
+//   // Reduzido de 50ms para 10ms: era o maior freio isolado no ciclo do
+//   // display, sem nenhum motivo tecnico pra ser tao alto (so precisa
+//   // de uma folga minima pra nao saturar o watchdog/Wi-Fi).
+//   delay(10);
 // }

@@ -10,7 +10,13 @@ class Connection{
     public static function getInstance(){
         if(!self::$instance){
             try{
-                $host = 'localhost';
+                // 127.0.0.1 em vez de 'localhost': no Windows, resolver
+                // o nome 'localhost' via getaddrinfo() pode levar ~2s
+                // (tenta IPv6 antes de cair para IPv4), e isso acontecia
+                // em TODA conexao com o banco -- ou seja, em quase toda
+                // requisicao do site. Usar o IP literal pula essa
+                // resolucao e liga em menos de 2ms.
+                $host = '127.0.0.1';
                 $dbname = 'aeris';
                 $username = 'root';
                 $password = getenv('AERIS_DB_PASSWORD') ?: 'senaisp';

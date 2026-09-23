@@ -1059,7 +1059,7 @@ if ($requestMethod === 'POST') {
 
     <header class="topbar">
         <a class="brand" href="home.php" aria-label="Voltar ao Sadag">
-            <img class="brand-mark" src="/view/html/sadag-logo.png" alt="Sadag">
+            <img class="brand-mark" src="/view/html/sadag-mark.png" alt="Sadag">
 
             <span class="brand-text">
                 <small>Monitoramento IoT</small>
